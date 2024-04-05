@@ -3,7 +3,6 @@ module github.com/sagini18/message-broker
 go 1.22.0
 
 require (
-	github.com/gorilla/websocket v1.5.1
 	github.com/labstack/echo/v4 v4.11.4
 )
 

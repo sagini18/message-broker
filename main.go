@@ -2,14 +2,19 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/sagini18/message-broker/internal/handlewebsocket"
 	"github.com/sagini18/message-broker/internal/messagequeue"
+	"github.com/sagini18/message-broker/internal/tcpconn"
 )
 
 func main() {
+
 	app := echo.New()
 
-	app.GET("/ws", handlewebsocket.HandleWebsocket)
+	go func() {
+		if err := tcpconn.InitConnection(); err != nil {
+			app.Logger.Fatal(err)
+		}
+	}()
 
 	app.POST("/api/channels/:id", messagequeue.AddToQueue)
 
