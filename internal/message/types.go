@@ -1,10 +1,11 @@
 package message
 
 import (
+	"net"
 	"sync"
-
-	"github.com/gorilla/websocket"
 )
+
+var Connection net.Conn
 
 type Message struct {
 	MessageId int
@@ -16,5 +17,3 @@ type CachedData struct {
 	sync.Mutex
 	Data map[string][]Message
 }
-
-var Connection *websocket.Conn

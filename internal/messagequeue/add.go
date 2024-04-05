@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/internal/message"
 )
@@ -54,9 +53,12 @@ func generateMessageId(id string) int {
 func writeMessage(messageCacheData []message.Message) error {
 	messageBytes, err := json.Marshal(messageCacheData)
 	if err != nil {
+		fmt.Println("Error while marshalling message: ", err)
 		return err
 	}
-	if err = message.Connection.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
+
+	if _, err := message.Connection.Write(messageBytes); err != nil {
+		fmt.Println("Error while writing message to consumer: ", err)
 		return err
 	}
 	return nil
@@ -73,4 +75,7 @@ func saveMessageToCache(id string, messageBody message.Message) {
 	MessageCache.Data[id] = []message.Message{messageBody}
 
 	fmt.Println("Message saved to cache: ", MessageCache.Data)
+	if id == "1" {
+		fmt.Println("-------------------------------------------------------------------")
+	}
 }

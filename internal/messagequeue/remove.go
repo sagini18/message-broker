@@ -27,6 +27,7 @@ func RemoveMessageFromChannel(msgs []message.Message) error {
 					delete(MessageCache.Data, channelId)
 				}
 				fmt.Println("MessageCache after Deleted: ", MessageCache.Data)
+				fmt.Println("-------------------------------------------------------------------")
 			}
 		}
 	}
