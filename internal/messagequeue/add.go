@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/internal/message"
@@ -16,7 +15,7 @@ var MessageCache message.CachedData = message.CachedData{Data: make(map[string][
 func AddToQueue(context echo.Context) error {
 	id := context.Param("id")
 
-	messageId := generateMessageId(id)
+	messageId := MessageCache.GenerateMessageId(id)
 
 	channelId, err := strconv.Atoi(id)
 	if err != nil {
@@ -31,35 +30,28 @@ func AddToQueue(context echo.Context) error {
 
 	saveMessageToCache(id, messageBody)
 
-	if error := writeMessage(MessageCache.Data[id]); error != nil {
-		fmt.Println("Error while writing message: ", error)
-		return error
+	if messageBody.ChannelId == 10 {
+		if error := writeMessage(MessageCache.Data[id]); error != nil {
+			fmt.Println("Error while writing message: ", error)
+			return error
+		}
 	}
 
 	return context.JSON(http.StatusOK, MessageCache.Data[id])
 }
 
-func generateMessageId(id string) int {
-	var mutex sync.Mutex
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if len(MessageCache.Data[id]) == 0 {
-		return 1
-	}
-	return MessageCache.Data[id][len(MessageCache.Data[id])-1].MessageId + 1
-}
-
 func writeMessage(messageCacheData []message.Message) error {
-	messageBytes, err := json.Marshal(messageCacheData)
-	if err != nil {
-		fmt.Println("Error while marshalling message: ", err)
-		return err
-	}
+	for _, consumer := range message.ConsumerCacheData.Data {
+		messageBytes, err := json.Marshal(messageCacheData)
+		if err != nil {
+			fmt.Println("Error while marshalling message: ", err)
+			return err
+		}
 
-	if _, err := message.Connection.Write(messageBytes); err != nil {
-		fmt.Println("Error while writing message to consumer: ", err)
-		return err
+		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
+			fmt.Println("Error while writing message to consumer: ", err)
+			return err
+		}
 	}
 	return nil
 }
