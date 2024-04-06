@@ -16,7 +16,7 @@ func RemoveMessageFromChannel(msgs []message.Message) error {
 		cachedData, found := MessageCache.Data[channelId]
 
 		if !found {
-			return fmt.Errorf("CHANNEL_NOT_FOUND")
+			continue
 		}
 
 		for index, value := range cachedData {
@@ -27,7 +27,6 @@ func RemoveMessageFromChannel(msgs []message.Message) error {
 					delete(MessageCache.Data, channelId)
 				}
 				fmt.Println("MessageCache after Deleted: ", MessageCache.Data)
-				fmt.Println("-------------------------------------------------------------------")
 			}
 		}
 	}
