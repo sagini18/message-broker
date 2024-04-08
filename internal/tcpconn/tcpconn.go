@@ -79,18 +79,20 @@ func handleClient(connection net.Conn) {
 		return
 	}
 
+	sendPreviousMessages(channelInt, connection)
+
 	if err := readMessage(); err != nil {
 		fmt.Println("Error while reading message: ", err)
 	}
 }
 
 func readMessage() error {
-	buf := make([]byte, 5120)
 	for {
 		for _, consumer := range message.ConsumerCacheData.Data {
 			fmt.Println("-------------------------------------------------------------------")
+			buf := make([]byte, 5120)
+
 			n, err := consumer.TcpConn.Read(buf)
-			fmt.Println("Received message from consumer: ", string(buf[:n]))
 			if err != nil {
 				return fmt.Errorf("READING_ERROR: %v", err)
 			}
@@ -112,6 +114,25 @@ func readMessage() error {
 					}
 				}
 			}
+		}
+	}
+}
+
+func sendPreviousMessages(channelId int, connection net.Conn) {
+	message.MessageCache.Lock()
+	defer message.MessageCache.Unlock()
+
+	if messages, found := message.MessageCache.Data[strconv.Itoa(channelId)]; found {
+		messageBytes, err := json.Marshal(messages)
+		if err != nil {
+			fmt.Println("Error while marshalling message: ", err)
+			return
+		}
+
+		_, err = connection.Write(messageBytes)
+		if err != nil {
+			fmt.Println("Error while writing previous messages to consumer: ", err)
+			return
 		}
 	}
 }
