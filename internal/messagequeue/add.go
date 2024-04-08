@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/internal/message"
+	"golang.org/x/exp/slices"
 )
 
-var MessageCache message.CachedData = message.CachedData{Data: make(map[string][]message.Message)}
-
 func AddToQueue(context echo.Context) error {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+
 	id := context.Param("id")
 
-	messageId := MessageCache.GenerateMessageId(id)
+	messageId := message.MessageCache.GenerateMessageId(id)
 
 	channelId, err := strconv.Atoi(id)
 	if err != nil {
@@ -30,43 +34,49 @@ func AddToQueue(context echo.Context) error {
 
 	saveMessageToCache(id, messageBody)
 
-	if messageBody.ChannelId == 10 {
-		if error := writeMessage(MessageCache.Data[id]); error != nil {
-			fmt.Println("Error while writing message: ", error)
-			return error
-		}
+	if error := writeMessage(message.MessageCache.Data[id], channelId); error != nil {
+		fmt.Println("Error while writing message: ", error)
+		return error
 	}
 
-	return context.JSON(http.StatusOK, MessageCache.Data[id])
+	return context.JSON(http.StatusOK, message.MessageCache.Data[id])
 }
 
-func writeMessage(messageCacheData []message.Message) error {
-	for _, consumer := range message.ConsumerCacheData.Data {
-		messageBytes, err := json.Marshal(messageCacheData)
-		if err != nil {
-			fmt.Println("Error while marshalling message: ", err)
-			return err
-		}
+func writeMessage(messageCacheData []message.Message, id int) error {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
 
-		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
-			fmt.Println("Error while writing message to consumer: ", err)
-			return err
+	for _, consumer := range message.ConsumerCacheData.Data {
+		if slices.Contains(consumer.SubscribedChannels, id) {
+			messageBytes, err := json.Marshal(messageCacheData)
+			if err != nil {
+				fmt.Println("Error while marshalling message: ", err)
+				return err
+			}
+
+			if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
+				fmt.Println("Error while writing message to consumer: ", err)
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 func saveMessageToCache(id string, messageBody message.Message) {
-	MessageCache.Lock()
-	defer MessageCache.Unlock()
+	message.MessageCache.Lock()
+	defer message.MessageCache.Unlock()
 
-	if cachedData, found := MessageCache.Data[id]; found {
+	if cachedData, found := message.MessageCache.Data[id]; found {
 		cachedData = append(cachedData, messageBody)
-		MessageCache.Data[id] = cachedData
-	}
-	MessageCache.Data[id] = []message.Message{messageBody}
+		message.MessageCache.Data[id] = cachedData
+	} else {
+		message.MessageCache.Data[id] = []message.Message{messageBody}
 
-	fmt.Println("Message saved to cache: ", MessageCache.Data)
+	}
+
+	fmt.Println("Message saved to cache: ", message.MessageCache.Data)
 	if id == "1" {
 		fmt.Println("-------------------------------------------------------------------")
 	}

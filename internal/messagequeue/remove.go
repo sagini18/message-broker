@@ -8,12 +8,12 @@ import (
 )
 
 func RemoveMessageFromChannel(msgs []message.Message) error {
-	MessageCache.Lock()
-	defer MessageCache.Unlock()
+	message.MessageCache.Lock()
+	defer message.MessageCache.Unlock()
 
 	for _, msg := range msgs {
 		channelId := strconv.Itoa(msg.ChannelId)
-		cachedData, found := MessageCache.Data[channelId]
+		cachedData, found := message.MessageCache.Data[channelId]
 
 		if !found {
 			continue
@@ -21,12 +21,12 @@ func RemoveMessageFromChannel(msgs []message.Message) error {
 
 		for index, value := range cachedData {
 			if found && value.MessageId == msg.MessageId {
-				MessageCache.Data[channelId] = append(cachedData[:index], cachedData[index+1:]...)
+				message.MessageCache.Data[channelId] = append(cachedData[:index], cachedData[index+1:]...)
 
-				if len(MessageCache.Data[channelId]) == 0 {
-					delete(MessageCache.Data, channelId)
+				if len(message.MessageCache.Data[channelId]) == 0 {
+					delete(message.MessageCache.Data, channelId)
 				}
-				fmt.Println("MessageCache after Deleted: ", MessageCache.Data)
+				fmt.Println("MessageCache after Deleted: ", message.MessageCache.Data)
 			}
 		}
 	}

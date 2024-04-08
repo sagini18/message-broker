@@ -19,9 +19,8 @@ type CachedData struct {
 }
 
 func (cd *CachedData) GenerateMessageId(id string) int {
-	var mutex sync.Mutex
-	mutex.Lock()
-	defer mutex.Unlock()
+	cd.Lock()
+	defer cd.Unlock()
 
 	if len(cd.Data[id]) == 0 {
 		return 1
@@ -41,6 +40,9 @@ type ConsumerCache struct {
 }
 
 func (ac *ConsumerCache) GenerateConsumerId() int {
+	ac.Lock()
+	defer ac.Unlock()
+
 	if len(ac.Data) == 0 {
 		return 1
 	}
@@ -48,3 +50,4 @@ func (ac *ConsumerCache) GenerateConsumerId() int {
 }
 
 var ConsumerCacheData ConsumerCache = ConsumerCache{Data: []Consumer{}}
+var MessageCache CachedData = CachedData{Data: make(map[string][]Message)}
