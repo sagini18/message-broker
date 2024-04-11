@@ -1,22 +1,16 @@
 package tcpconn
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
-	"sync"
 
-	"github.com/sagini18/message-broker/internal/message"
+	"github.com/sagini18/message-broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/internal/messagequeue"
 )
 
 func InitConnection() error {
-	var mutex sync.Mutex
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	listener, err := net.Listen("tcp", ":8081")
 	if err != nil {
 		return fmt.Errorf("LISTENING_ERROR: %v", err)
@@ -25,19 +19,18 @@ func InitConnection() error {
 	defer listener.Close()
 
 	for {
-		message.Connection, err = listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			return fmt.Errorf("ACCEPTING_ERROR: %v", err)
 		}
-		go handleClient(message.Connection)
+		go handleClient(conn)
 	}
 }
 
+var messageChan = make(chan channelconsumer.Message)
+
 func handleClient(connection net.Conn) {
-	consumer := message.Consumer{
-		ConsumerId: message.ConsumerCacheData.GenerateConsumerId(),
-		TcpConn:    connection,
-	}
+	consumer := channelconsumer.NewConsumer(&connection)
 
 	channelBuf := make([]byte, 5120)
 	n, err := connection.Read(channelBuf)
@@ -54,20 +47,16 @@ func handleClient(connection net.Conn) {
 
 	consumer.SubscribedChannels = append(consumer.SubscribedChannels, channelInt)
 
-	message.ConsumerCacheData.Lock()
-	message.ConsumerCacheData.Data = append(message.ConsumerCacheData.Data, consumer)
-	message.ConsumerCacheData.Unlock()
+	channelconsumer.ConsumerCacheData.Lock()
+	channelconsumer.ConsumerCacheData.Data = append(channelconsumer.ConsumerCacheData.Data, *consumer)
+	channelconsumer.ConsumerCacheData.Unlock()
 
-	fmt.Println("Consumer subscribed to channel: ", message.ConsumerCacheData.Data)
+	fmt.Println("Consumer subscribed to channel: ", channelconsumer.ConsumerCacheData.Data)
 
-	var channelConfir [1]message.Message
-	channelConfir[0] = message.Message{
-		MessageId: -1,
-		ChannelId: -1,
-		Content:   channel,
-	}
+	var channelConfirmation [1]channelconsumer.Message
+	channelConfirmation[0] = *channelconsumer.NewMessage(-1, channel)
 
-	channelBytes, err := json.Marshal(channelConfir)
+	channelBytes, err := json.Marshal(channelConfirmation)
 	if err != nil {
 		fmt.Printf("MARSHALING_ERROR: %v\n", err)
 		return
@@ -81,48 +70,50 @@ func handleClient(connection net.Conn) {
 
 	sendPreviousMessages(channelInt, connection)
 
-	if err := readMessage(); err != nil {
-		fmt.Println("Error while reading message: ", err)
+	go func() {
+		defer connection.Close()
+
+		buf := make([]byte, 5120)
+		for {
+			n, err := connection.Read(buf)
+			if err != nil {
+				fmt.Printf("READING_ERROR: %v", err)
+				return
+			}
+			messageBytes := buf[:n]
+
+			var msgs []channelconsumer.Message
+			if err := json.Unmarshal(messageBytes, &msgs); err != nil {
+				fmt.Printf("UNMARSHALING_ERROR: %v", err)
+				return
+			}
+
+			for _, msg := range msgs {
+				messageChan <- msg
+			}
+		}
+	}()
+
+	if err := removeMessages(); err != nil {
+		fmt.Println("Error while removing message: ", err)
 	}
 }
 
-func readMessage() error {
-	for {
-		for _, consumer := range message.ConsumerCacheData.Data {
-			fmt.Println("-------------------------------------------------------------------")
-			buf := make([]byte, 5120)
-
-			n, err := consumer.TcpConn.Read(buf)
-			if err != nil {
-				return fmt.Errorf("READING_ERROR: %v", err)
-			}
-			messageBytes := buf[:n]
-			var msgs []message.Message
-
-			chunks := bytes.Split(messageBytes, []byte("]"))
-			for _, chunk := range chunks {
-				if len(chunk) > 0 {
-					chunk = append(chunk, ']')
-					error := json.Unmarshal(chunk, &msgs)
-					if error != nil {
-						return fmt.Errorf("UNMARSHALING_ERROR: %v", error)
-					}
-					fmt.Println("Received message from consumer as ack: ", msgs)
-
-					if err := messagequeue.RemoveMessageFromChannel(msgs); err != nil {
-						return fmt.Errorf("REMOVING_MESSAGE_ERROR: %v", err)
-					}
-				}
-			}
+func removeMessages() error {
+	for msg := range messageChan {
+		fmt.Println("Received message from consumer as ack: ", msg)
+		if err := messagequeue.RemoveMessageFromChannel([]channelconsumer.Message{msg}); err != nil {
+			return fmt.Errorf("REMOVING_MESSAGE_ERROR: %v", err)
 		}
 	}
+	return nil
 }
 
 func sendPreviousMessages(channelId int, connection net.Conn) {
-	message.MessageCache.Lock()
-	defer message.MessageCache.Unlock()
+	channelconsumer.MessageCache.Lock()
+	defer channelconsumer.MessageCache.Unlock()
 
-	if messages, found := message.MessageCache.Data[strconv.Itoa(channelId)]; found {
+	if messages, found := channelconsumer.MessageCache.Data[channelId]; found {
 		messageBytes, err := json.Marshal(messages)
 		if err != nil {
 			fmt.Println("Error while marshalling message: ", err)
