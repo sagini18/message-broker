@@ -94,19 +94,15 @@ func handleClient(connection net.Conn) {
 		}
 	}()
 
-	if err := removeMessages(); err != nil {
-		fmt.Println("Error while removing message: ", err)
-	}
+	removeMessages()
 }
 
-func removeMessages() error {
+func removeMessages() {
 	for msg := range messageChan {
 		fmt.Println("Received message from consumer as ack: ", msg)
-		if err := messagequeue.RemoveMessageFromChannel([]channelconsumer.Message{msg}); err != nil {
-			return fmt.Errorf("REMOVING_MESSAGE_ERROR: %v", err)
-		}
+
+		messagequeue.RemoveMessageFromChannel(msg)
 	}
-	return nil
 }
 
 func sendPreviousMessages(channelId int, connection net.Conn) {
