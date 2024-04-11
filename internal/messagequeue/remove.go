@@ -6,18 +6,14 @@ import (
 	"github.com/sagini18/message-broker/internal/channelconsumer"
 )
 
-func RemoveMessageFromChannel(msgs []channelconsumer.Message) error {
+func RemoveMessageFromChannel(msg channelconsumer.Message) {
 	channelconsumer.MessageCache.Lock()
 	defer channelconsumer.MessageCache.Unlock()
 
-	for _, msg := range msgs {
-		channelId := msg.ChannelId
-		cachedData, found := channelconsumer.MessageCache.Data[channelId]
+	channelId := msg.ChannelId
+	cachedData, found := channelconsumer.MessageCache.Data[channelId]
 
-		if !found {
-			continue
-		}
-
+	if found {
 		for index, value := range cachedData {
 			if found && value.MessageId == msg.MessageId {
 				channelconsumer.MessageCache.Data[channelId] = append(cachedData[:index], cachedData[index+1:]...)
@@ -29,5 +25,4 @@ func RemoveMessageFromChannel(msgs []channelconsumer.Message) error {
 			}
 		}
 	}
-	return nil
 }
