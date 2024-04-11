@@ -2,18 +2,17 @@ package messagequeue
 
 import (
 	"fmt"
-	"strconv"
 
-	"github.com/sagini18/message-broker/internal/message"
+	"github.com/sagini18/message-broker/internal/channelconsumer"
 )
 
-func RemoveMessageFromChannel(msgs []message.Message) error {
-	message.MessageCache.Lock()
-	defer message.MessageCache.Unlock()
+func RemoveMessageFromChannel(msgs []channelconsumer.Message) error {
+	channelconsumer.MessageCache.Lock()
+	defer channelconsumer.MessageCache.Unlock()
 
 	for _, msg := range msgs {
-		channelId := strconv.Itoa(msg.ChannelId)
-		cachedData, found := message.MessageCache.Data[channelId]
+		channelId := msg.ChannelId
+		cachedData, found := channelconsumer.MessageCache.Data[channelId]
 
 		if !found {
 			continue
@@ -21,12 +20,12 @@ func RemoveMessageFromChannel(msgs []message.Message) error {
 
 		for index, value := range cachedData {
 			if found && value.MessageId == msg.MessageId {
-				message.MessageCache.Data[channelId] = append(cachedData[:index], cachedData[index+1:]...)
+				channelconsumer.MessageCache.Data[channelId] = append(cachedData[:index], cachedData[index+1:]...)
 
-				if len(message.MessageCache.Data[channelId]) == 0 {
-					delete(message.MessageCache.Data, channelId)
+				if len(channelconsumer.MessageCache.Data[channelId]) == 0 {
+					delete(channelconsumer.MessageCache.Data, channelId)
 				}
-				fmt.Println("MessageCache after Deleted: ", message.MessageCache.Data)
+				fmt.Println("MessageCache after Deleted: ", channelconsumer.MessageCache.Data)
 			}
 		}
 	}

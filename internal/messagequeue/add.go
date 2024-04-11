@@ -5,49 +5,35 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/labstack/echo/v4"
-	"github.com/sagini18/message-broker/internal/message"
+	"github.com/sagini18/message-broker/internal/channelconsumer"
 	"golang.org/x/exp/slices"
 )
 
 func AddToQueue(context echo.Context) error {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
-
 	id := context.Param("id")
-
-	messageId := message.MessageCache.GenerateMessageId(id)
 
 	channelId, err := strconv.Atoi(id)
 	if err != nil {
 		fmt.Println("Error while converting id to int: ", err)
 		return err
 	}
-	messageBody := message.Message{
-		MessageId: messageId,
-		ChannelId: channelId,
-	}
-	context.Bind(&messageBody)
+	messageBody := channelconsumer.NewMessage(channelId, nil)
+	context.Bind(messageBody)
 
-	saveMessageToCache(id, messageBody)
+	saveMessageToCache(channelId, *messageBody)
 
-	if error := writeMessage(message.MessageCache.Data[id], channelId); error != nil {
+	if error := writeMessage(channelconsumer.MessageCache.Data[channelId], channelId); error != nil {
 		fmt.Println("Error while writing message: ", error)
 		return error
 	}
 
-	return context.JSON(http.StatusOK, message.MessageCache.Data[id])
+	return context.JSON(http.StatusOK, channelconsumer.MessageCache.Data[channelId])
 }
 
-func writeMessage(messageCacheData []message.Message, id int) error {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
-
-	for _, consumer := range message.ConsumerCacheData.Data {
+func writeMessage(messageCacheData []channelconsumer.Message, id int) error {
+	for _, consumer := range channelconsumer.ConsumerCacheData.Data {
 		if slices.Contains(consumer.SubscribedChannels, id) {
 			messageBytes, err := json.Marshal(messageCacheData)
 			if err != nil {
@@ -64,20 +50,17 @@ func writeMessage(messageCacheData []message.Message, id int) error {
 	return nil
 }
 
-func saveMessageToCache(id string, messageBody message.Message) {
-	message.MessageCache.Lock()
-	defer message.MessageCache.Unlock()
+func saveMessageToCache(id int, messageBody channelconsumer.Message) {
+	channelconsumer.MessageCache.Lock()
+	defer channelconsumer.MessageCache.Unlock()
 
-	if cachedData, found := message.MessageCache.Data[id]; found {
+	if cachedData, found := channelconsumer.MessageCache.Data[id]; found {
 		cachedData = append(cachedData, messageBody)
-		message.MessageCache.Data[id] = cachedData
+		channelconsumer.MessageCache.Data[id] = cachedData
 	} else {
-		message.MessageCache.Data[id] = []message.Message{messageBody}
+		channelconsumer.MessageCache.Data[id] = []channelconsumer.Message{messageBody}
 
 	}
 
-	fmt.Println("Message saved to cache: ", message.MessageCache.Data)
-	if id == "1" {
-		fmt.Println("-------------------------------------------------------------------")
-	}
+	fmt.Println("Message saved to cache: ", channelconsumer.MessageCache.Data)
 }
