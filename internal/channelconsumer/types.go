@@ -20,15 +20,15 @@ func (cd *CachedData) generateMessageId(id int) int {
 	cd.Lock()
 	defer cd.Unlock()
 
-	if id == -1{
+	if id == -1 {
 		return -1
-	}else if len(cd.Data[id]) == 0 {
+	} else if len(cd.Data[id]) == 0 {
 		return 1
 	}
 	return cd.Data[id][len(cd.Data[id])-1].MessageId + 1
 }
 
-func NewMessage(channelNum int, content interface{}) *Message {	
+func NewMessage(channelNum int, content interface{}) *Message {
 	return &Message{
 		MessageId: MessageCache.generateMessageId(channelNum),
 		ChannelId: channelNum,
@@ -40,6 +40,7 @@ type Consumer struct {
 	ConsumerId         int
 	SubscribedChannels []int
 	TcpConn            net.Conn
+	AllSent            bool
 }
 
 type ConsumerCache struct {
@@ -47,10 +48,17 @@ type ConsumerCache struct {
 	Data []Consumer
 }
 
+var DeletedConsumerId int = -1
+var ConsumerMaxLen int = 0
+
 func (ac *ConsumerCache) generateConsumerId() int {
 	ac.Lock()
 	defer ac.Unlock()
 
+	if DeletedConsumerId != -1 {
+		DeletedConsumerId++
+		return DeletedConsumerId
+	}
 	if len(ac.Data) == 0 {
 		return 1
 	}
@@ -61,8 +69,10 @@ func NewConsumer(conn *net.Conn) *Consumer {
 	return &Consumer{
 		ConsumerId: ConsumerCacheData.generateConsumerId(),
 		TcpConn:    *conn,
+		AllSent:    true,
 	}
 }
 
 var ConsumerCacheData ConsumerCache = ConsumerCache{Data: []Consumer{}}
+
 var MessageCache CachedData = CachedData{Data: make(map[int][]Message)}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/sagini18/message-broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/internal/messagequeue"
@@ -49,9 +50,10 @@ func handleClient(connection net.Conn) {
 
 	channelconsumer.ConsumerCacheData.Lock()
 	channelconsumer.ConsumerCacheData.Data = append(channelconsumer.ConsumerCacheData.Data, *consumer)
-	channelconsumer.ConsumerCacheData.Unlock()
 
+	fmt.Println("------------------------------------------------------------------------")
 	fmt.Println("Consumer subscribed to channel: ", channelconsumer.ConsumerCacheData.Data)
+	channelconsumer.ConsumerCacheData.Unlock()
 
 	var channelConfirmation [1]channelconsumer.Message
 	channelConfirmation[0] = *channelconsumer.NewMessage(-1, channel)
@@ -77,7 +79,25 @@ func handleClient(connection net.Conn) {
 		for {
 			n, err := connection.Read(buf)
 			if err != nil {
-				fmt.Printf("READING_ERROR: %v", err)
+				if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
+					channelconsumer.ConsumerCacheData.Lock()
+					for i, c := range channelconsumer.ConsumerCacheData.Data {
+						if c.ConsumerId == consumer.ConsumerId {
+							c.AllSent = false
+							if channelconsumer.ConsumerMaxLen < len(channelconsumer.ConsumerCacheData.Data) {
+								channelconsumer.ConsumerMaxLen = len(channelconsumer.ConsumerCacheData.Data)
+								if i == len(channelconsumer.ConsumerCacheData.Data)-1 {
+									channelconsumer.DeletedConsumerId = c.ConsumerId
+								}
+							}
+							channelconsumer.ConsumerCacheData.Data = append(channelconsumer.ConsumerCacheData.Data[:i], channelconsumer.ConsumerCacheData.Data[i+1:]...)
+							break
+						}
+					}
+					channelconsumer.ConsumerCacheData.Unlock()
+					continue
+				}
+				fmt.Printf("READING_ERROR: %v", err.Error())
 				return
 			}
 			messageBytes := buf[:n]
@@ -107,7 +127,6 @@ func removeMessages() {
 
 func sendPreviousMessages(channelId int, connection net.Conn) {
 	channelconsumer.MessageCache.Lock()
-	defer channelconsumer.MessageCache.Unlock()
 
 	if messages, found := channelconsumer.MessageCache.Data[channelId]; found {
 		messageBytes, err := json.Marshal(messages)
@@ -122,4 +141,5 @@ func sendPreviousMessages(channelId int, connection net.Conn) {
 			return
 		}
 	}
+	channelconsumer.MessageCache.Unlock()
 }
