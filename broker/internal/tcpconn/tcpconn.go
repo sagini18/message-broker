@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sagini18/message-broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/internal/messagequeue"
+	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/messagequeue"
 )
 
 func InitConnection() error {

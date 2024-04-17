@@ -3,7 +3,7 @@ package messagequeue
 import (
 	"fmt"
 
-	"github.com/sagini18/message-broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 )
 
 func RemoveMessageFromChannel(msg channelconsumer.Message) {

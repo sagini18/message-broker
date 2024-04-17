@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sagini18/consumers/internal/types"
+	"github.com/sagini18/message-broker/consumer/internal/types"
 )
 
 func WriteMessage() {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sagini18/consumers/internal/handlers"
+	"github.com/sagini18/message-broker/consumer/internal/handlers"
 )
 
 func main() {
