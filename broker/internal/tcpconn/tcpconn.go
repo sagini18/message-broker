@@ -79,6 +79,7 @@ func handleClient(connection net.Conn) {
 		for {
 			n, err := connection.Read(buf)
 			if err != nil {
+				fmt.Printf("READING_ERROR: %v", err)
 				if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 					channelconsumer.ConsumerCacheData.Lock()
 					for i, c := range channelconsumer.ConsumerCacheData.Data {
@@ -97,7 +98,6 @@ func handleClient(connection net.Conn) {
 					channelconsumer.ConsumerCacheData.Unlock()
 					continue
 				}
-				fmt.Printf("READING_ERROR: %v", err.Error())
 				return
 			}
 			messageBytes := buf[:n]
