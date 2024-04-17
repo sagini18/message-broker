@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/sagini18/message-broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"golang.org/x/exp/slices"
 )
 

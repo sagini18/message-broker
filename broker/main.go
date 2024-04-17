@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/sagini18/message-broker/internal/messagequeue"
-	"github.com/sagini18/message-broker/internal/tcpconn"
+	"github.com/sagini18/message-broker/broker/internal/messagequeue"
+	"github.com/sagini18/message-broker/broker/internal/tcpconn"
 )
 
 func main() {
