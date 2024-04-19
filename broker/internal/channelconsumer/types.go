@@ -2,77 +2,32 @@ package channelconsumer
 
 import (
 	"net"
-	"sync"
 )
 
 type Message struct {
-	MessageId int
+	ID        int
 	ChannelId int
 	Content   interface{}
 }
 
-type CachedData struct {
-	sync.Mutex
-	Data map[int][]Message
-}
-
-func (cd *CachedData) generateMessageId(id int) int {
-	cd.Lock()
-	defer cd.Unlock()
-
-	if id == -1 {
-		return -1
-	} else if len(cd.Data[id]) == 0 {
-		return 1
-	}
-	return cd.Data[id][len(cd.Data[id])-1].MessageId + 1
-}
-
-func NewMessage(channelNum int, content interface{}) *Message {
+func NewMessage(id int, channelNum int, content interface{}) *Message {
 	return &Message{
-		MessageId: MessageCache.generateMessageId(channelNum),
+		ID:        id,
 		ChannelId: channelNum,
 		Content:   content,
 	}
 }
 
 type Consumer struct {
-	ConsumerId         int
+	Id                 int
 	SubscribedChannels []int
 	TcpConn            net.Conn
-	AllSent            bool
 }
 
-type ConsumerCache struct {
-	sync.Mutex
-	Data []Consumer
-}
-
-var DeletedConsumerId int = -1
-var ConsumerMaxLen int = 0
-
-func (ac *ConsumerCache) generateConsumerId() int {
-	ac.Lock()
-	defer ac.Unlock()
-
-	if DeletedConsumerId != -1 {
-		DeletedConsumerId++
-		return DeletedConsumerId
-	}
-	if len(ac.Data) == 0 {
-		return 1
-	}
-	return ac.Data[len(ac.Data)-1].ConsumerId + 1
-}
-
-func NewConsumer(conn *net.Conn) *Consumer {
+func NewConsumer(id int, conn net.Conn, subscribedChannels []int) *Consumer {
 	return &Consumer{
-		ConsumerId: ConsumerCacheData.generateConsumerId(),
-		TcpConn:    *conn,
-		AllSent:    true,
+		Id:                 id,
+		TcpConn:            conn,
+		SubscribedChannels: subscribedChannels,
 	}
 }
-
-var ConsumerCacheData ConsumerCache = ConsumerCache{Data: []Consumer{}}
-
-var MessageCache CachedData = CachedData{Data: make(map[int][]Message)}
