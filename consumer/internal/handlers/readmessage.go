@@ -15,7 +15,7 @@ func ReadMessage() {
 			fmt.Println("Error in reading: ", err)
 			return
 		}
-		fmt.Println("-------------------------------------------------------------")
+		fmt.Println("------------------------------------------------------------------------------------------")
 
 		if n > 0 {
 			receivedData := make([]byte, n)
@@ -37,7 +37,7 @@ func ReadMessage() {
 							if len(types.ReadableReceivedMsgs) == 0 {
 								continue
 							}
-							if msg.ChannelId == -1 && msg.MessageId == -1 {
+							if msg.ChannelId == -1 && msg.MessageId == 0 {
 								fmt.Println("Listening to the channel: ", msg.Content)
 								continue
 							}
