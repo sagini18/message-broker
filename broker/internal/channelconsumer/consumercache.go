@@ -10,17 +10,18 @@ import (
 type Storage interface {
 	Add(consumer *Consumer)
 	Remove(consumerId int)
-	Get() []*Consumer
+	Get() map[int]Consumer
+	GetConsumer(consumerId int) Consumer
 }
 
 type InMemoryConsumerCache struct {
 	mu        sync.Mutex
-	consumers []*Consumer //should be a map
+	consumers map[int]Consumer
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 	return &InMemoryConsumerCache{
-		consumers: make([]*Consumer, 0),
+		consumers: make(map[int]Consumer),
 	}
 }
 
@@ -28,7 +29,7 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	cc.consumers = append(cc.consumers, consumer)
+	cc.consumers[consumer.Id] = *consumer
 
 	fmt.Println("------------------------------------------------------------------------------------------")
 	logrus.Info("ConsumerCache after Added: ", cc.consumers)
@@ -38,18 +39,19 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	for i, c := range cc.consumers {
-		if c.Id == consumerId {
-			cc.consumers = append(cc.consumers[:i], cc.consumers[i+1:]...)
-			logrus.Info("ConsumerCache after Deleted: ", cc.consumers)
-			break
-		}
-	}
+	delete(cc.consumers, consumerId)
 }
 
-func (cc *InMemoryConsumerCache) Get() []*Consumer {
+func (cc *InMemoryConsumerCache) Get() map[int]Consumer {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
 	return cc.consumers
+}
+
+func (cc *InMemoryConsumerCache) GetConsumer(consumerId int) Consumer {
+	cc.mu.Lock()
+	defer cc.mu.Unlock()
+
+	return cc.consumers[consumerId]
 }

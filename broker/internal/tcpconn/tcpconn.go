@@ -20,7 +20,9 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		n, err := connection.Read(buf)
 		if err != nil {
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-				store.Remove(consumer.Id)
+				if c := store.GetConsumer(consumer.Id); c.Id == consumer.Id {
+					store.Remove(consumer.Id)
+				}
 				continue
 			}
 			return fmt.Errorf("tcpconn.listenToConsumerMessages(): connection.Read error: %v", err)
