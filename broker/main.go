@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/messagequeue"
+	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +27,7 @@ func main() {
 
 	app := echo.New()
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return messagequeue.AddToQueue(c, messageQueue, consumerStorage, messageIdGenerator)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
 	})
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)

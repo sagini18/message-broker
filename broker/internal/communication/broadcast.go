@@ -1,4 +1,4 @@
-package messagequeue
+package communication
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func AddToQueue(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
 	id := context.Param("id")
 
 	channelId, err := strconv.Atoi(id)
