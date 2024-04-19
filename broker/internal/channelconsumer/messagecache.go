@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type MessageQueue interface {
@@ -35,8 +37,8 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 	} else {
 		mc.messages[message.ChannelId] = []Message{message}
 	}
-	fmt.Println("--------------------------------------------")
-	fmt.Println("MessageCache after Added: ", mc.messages)
+	fmt.Println("----------------------------------------------------------------------------------")
+	logrus.Info("MessageCache after Added: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) Remove(message Message) {
@@ -51,7 +53,8 @@ func (mc *InMemoryMessageCache) Remove(message Message) {
 				if len(mc.messages[message.ChannelId]) == 0 {
 					delete(mc.messages, message.ChannelId)
 				}
-				fmt.Println("MessageCache after Deleted: ", mc.messages)
+
+				logrus.Info("MessageCache after Deleted: ", mc.messages)
 				break
 			}
 		}
@@ -65,13 +68,12 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection ne
 	if messages, found := mc.messages[channelId]; found {
 		messageBytes, err := json.Marshal(messages)
 		if err != nil {
-			fmt.Println("SendPendingMessages() Error while marshalling message: ", err)
+			logrus.Error("SendPendingMessages() Error while marshalling message: ", err)
 			return
 		}
 
-		_, err = connection.Write(messageBytes)
-		if err != nil {
-			fmt.Println("SendPendingMessages Error while writing previous messages to consumer: ", err)
+		if _, err = connection.Write(messageBytes); err != nil {
+			logrus.Error("SendPendingMessages() Error while writing previous messages to consumer: ", err)
 			return
 		}
 	}

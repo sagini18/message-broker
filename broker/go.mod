@@ -2,10 +2,7 @@ module github.com/sagini18/message-broker/broker
 
 go 1.22.0
 
-require (
-	github.com/labstack/echo/v4 v4.12.0
-	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
-)
+require github.com/labstack/echo/v4 v4.12.0
 
 require (
 	github.com/labstack/gommon v0.4.2 // indirect

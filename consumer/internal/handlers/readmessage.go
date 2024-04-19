@@ -15,7 +15,7 @@ func ReadMessage() {
 			fmt.Println("Error in reading: ", err)
 			return
 		}
-		fmt.Println("-------------------------------------------------------------")
+		fmt.Println("------------------------------------------------------------------------------------------")
 
 		if n > 0 {
 			receivedData := make([]byte, n)

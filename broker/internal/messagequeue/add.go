@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sirupsen/logrus"
 )
 
 func AddToQueue(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
@@ -17,8 +18,7 @@ func AddToQueue(context echo.Context, messageQueue *channelconsumer.InMemoryMess
 
 	channelId, err := strconv.Atoi(id)
 	if err != nil {
-		fmt.Println("Error while converting id to int: ", err)
-		return err
+		return fmt.Errorf("messagequeue.AddToQueue(): strconv.Atoi error: %v", err)
 	}
 
 	newId := messageIdGenerator.NewId()
@@ -30,8 +30,8 @@ func AddToQueue(context echo.Context, messageQueue *channelconsumer.InMemoryMess
 	allMessages := messageQueue.Get()
 
 	if error := writeMessage(allMessages[channelId], channelId, consumerStorage); error != nil {
-		fmt.Println("Error while writing message: ", error)
-		return error
+		logrus.Errorf("messagequeue.AddToQueue(): writeMessage error: %v", error)
+		return context.JSON(http.StatusInternalServerError, "Error in writing message to consumer: "+error.Error())
 	}
 
 	return context.JSON(http.StatusOK, allMessages[channelId])
@@ -44,8 +44,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 		if slices.Contains(consumer.SubscribedChannels, id) {
 			messageBytes, err := json.Marshal(messageCacheData)
 			if err != nil {
-				fmt.Println("Error while marshalling message: ", err)
-				return err
+				return fmt.Errorf("messagequeue.writeMessage(): json.Marshal error: %v", err)
 			}
 
 			if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
@@ -53,8 +52,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 					store.Remove(consumer.Id)
 					continue
 				}
-				fmt.Printf("WRITING_ERROR: %v", err.Error())
-				return err
+				return fmt.Errorf("messagequeue.writeMessage(): consumer.TcpConn.Write error: %v", err)
 			}
 		}
 	}
