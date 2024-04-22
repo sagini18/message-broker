@@ -10,16 +10,35 @@ import (
 
 func ReadMessage() {
 	for {
-		n, err := types.Connection.Read(types.ReceivedMessage)
-		if err != nil {
-			fmt.Println("Error in reading: ", err)
-			return
+		totalBytesRead := 0
+		buffer := make([]byte, 200)
+
+		for {
+			n, err := types.Connection.Read(buffer[totalBytesRead:])
+			if err != nil {
+				fmt.Println("Error in reading data: ", err)
+				return
+			}
+
+			totalBytesRead += n
+
+			if totalBytesRead >= len(buffer) {
+				newBufferSize := len(buffer) * 2
+				newBuffer := make([]byte, newBufferSize)
+				copy(newBuffer, buffer)
+				buffer = newBuffer
+			} else {
+				break
+			}
 		}
+
+		types.ReceivedMessage = buffer[:totalBytesRead]
+
 		fmt.Println("------------------------------------------------------------------------------------------")
 
-		if n > 0 {
-			receivedData := make([]byte, n)
-			copy(receivedData, types.ReceivedMessage[:n])
+		if totalBytesRead > 0 {
+			receivedData := make([]byte, totalBytesRead)
+			copy(receivedData, types.ReceivedMessage[:totalBytesRead])
 
 			chunks := bytes.Split(receivedData, []byte("]"))
 			for _, chunk := range chunks {

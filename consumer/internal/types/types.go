@@ -11,5 +11,5 @@ type Message struct {
 }
 
 var Connection net.Conn
-var ReceivedMessage = make([]byte, 5120)
+var ReceivedMessage = make([]byte, 200)
 var ReadableReceivedMsgs []Message

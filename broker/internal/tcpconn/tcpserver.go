@@ -63,7 +63,7 @@ func (t *TCPServer) Listen() error {
 }
 
 func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channelconsumer.Consumer, error) {
-	channelBuf := make([]byte, 1024)
+	channelBuf := make([]byte, 200)
 
 	n, err := connection.Read(channelBuf)
 	if err != nil {

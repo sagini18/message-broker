@@ -31,7 +31,6 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	if error := writeMessage(allMessages[channelId], channelId, consumerStorage); error != nil {
 		logrus.Errorf("messagequeue.AddToQueue(): writeMessage error: %v", error)
-		return context.JSON(http.StatusInternalServerError, "Error in writing message to consumer: "+error.Error())
 	}
 
 	return context.JSON(http.StatusOK, allMessages[channelId])
