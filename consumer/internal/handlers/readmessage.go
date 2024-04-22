@@ -6,17 +6,18 @@ import (
 	"fmt"
 
 	"github.com/sagini18/message-broker/consumer/internal/types"
+	"github.com/sirupsen/logrus"
 )
 
-func ReadMessage() {
+func ReadMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
 	for {
 		totalBytesRead := 0
 		buffer := make([]byte, 200)
 
 		for {
-			n, err := types.Connection.Read(buffer[totalBytesRead:])
+			n, err := tcpConsumer.Conn.Read(buffer[totalBytesRead:])
 			if err != nil {
-				fmt.Println("Error in reading data: ", err)
+				logrus.Error("Error in reading data: ", err)
 				return
 			}
 
@@ -31,41 +32,44 @@ func ReadMessage() {
 				break
 			}
 		}
+		receiver.NewReceivedMessage(buffer[:totalBytesRead])
 
-		types.ReceivedMessage = buffer[:totalBytesRead]
+		unmarshalAndCallWriteMessage(receiver, tcpConsumer, totalBytesRead)
+	}
+}
 
-		fmt.Println("------------------------------------------------------------------------------------------")
+func unmarshalAndCallWriteMessage(receiver *types.Receiver, tcpConsumer *types.TcpConn, totalBytesRead int) {
+	if totalBytesRead > 0 {
+		receivedData := make([]byte, totalBytesRead)
+		copy(receivedData, receiver.ReceivedMessage[:totalBytesRead])
 
-		if totalBytesRead > 0 {
-			receivedData := make([]byte, totalBytesRead)
-			copy(receivedData, types.ReceivedMessage[:totalBytesRead])
+		chunks := bytes.Split(receivedData, []byte("]"))
+		for _, chunk := range chunks {
+			if len(chunk) > 0 {
+				chunk = append(chunk, ']')
 
-			chunks := bytes.Split(receivedData, []byte("]"))
-			for _, chunk := range chunks {
-				if len(chunk) > 0 {
-					chunk = append(chunk, ']')
+				error := json.Unmarshal(chunk, &receiver.ReadableReceivedMsgs)
+				if error != nil {
+					logrus.Error("Error in unmarshalling data: ", error)
+					return
+				}
 
-					error := json.Unmarshal(chunk, &types.ReadableReceivedMsgs)
-					if error != nil {
-						fmt.Println("Error in unmarshalling: ", error)
-						return
-					}
+				fmt.Println("------------------------------------------------------------------------------------------")
 
-					if len(types.ReadableReceivedMsgs) > 0 {
-						for _, msg := range types.ReadableReceivedMsgs {
-							if len(types.ReadableReceivedMsgs) == 0 {
-								continue
-							}
-							if msg.ChannelId == -1 && msg.MessageId == 0 {
-								fmt.Println("Listening to the channel: ", msg.Content)
-								continue
-							}
-
-							fmt.Println("Received : ", types.ReadableReceivedMsgs)
-
-							types.ReceivedMessage = receivedData
-							WriteMessage()
+				if len(receiver.ReadableReceivedMsgs) > 0 {
+					for _, msg := range receiver.ReadableReceivedMsgs {
+						if len(receiver.ReadableReceivedMsgs) == 0 {
+							continue
 						}
+						if msg.ChannelId == -1 && msg.MessageId == 0 {
+							logrus.Info("Listening to channel: ", msg.Content)
+							continue
+						}
+
+						logrus.Info("Received message: ", receiver.ReadableReceivedMsgs)
+
+						receiver.ReceivedMessage = receivedData
+						WriteMessage(tcpConsumer, receiver)
 					}
 				}
 			}
