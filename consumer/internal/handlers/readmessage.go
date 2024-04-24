@@ -34,16 +34,15 @@ func ReadMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
 		}
 		receiver.NewReceivedMessage(buffer[:totalBytesRead])
 
-		unmarshalAndCallWriteMessage(receiver, tcpConsumer, totalBytesRead)
+		unmarshalMessage(receiver, tcpConsumer, totalBytesRead)
 	}
 }
 
-func unmarshalAndCallWriteMessage(receiver *types.Receiver, tcpConsumer *types.TcpConn, totalBytesRead int) {
+func unmarshalMessage(receiver *types.Receiver, tcpConsumer *types.TcpConn, totalBytesRead int) {
 	if totalBytesRead > 0 {
-		receivedData := make([]byte, totalBytesRead)
-		copy(receivedData, receiver.ReceivedMessage[:totalBytesRead])
+		receiver.ReceivedMessage = receiver.ReceivedMessage[:totalBytesRead]
 
-		chunks := bytes.Split(receivedData, []byte("]"))
+		chunks := bytes.Split(receiver.ReceivedMessage, []byte("]"))
 		for _, chunk := range chunks {
 			if len(chunk) > 0 {
 				chunk = append(chunk, ']')
@@ -56,23 +55,26 @@ func unmarshalAndCallWriteMessage(receiver *types.Receiver, tcpConsumer *types.T
 
 				fmt.Println("------------------------------------------------------------------------------------------")
 
-				if len(receiver.ReadableReceivedMsgs) > 0 {
-					for _, msg := range receiver.ReadableReceivedMsgs {
-						if len(receiver.ReadableReceivedMsgs) == 0 {
-							continue
-						}
-						if msg.ChannelId == -1 && msg.MessageId == 0 {
-							logrus.Info("Listening to channel: ", msg.Content)
-							continue
-						}
-
-						logrus.Info("Received message: ", receiver.ReadableReceivedMsgs)
-
-						receiver.ReceivedMessage = receivedData
-						WriteMessage(tcpConsumer, receiver)
-					}
-				}
+				decodeMessage(tcpConsumer, receiver)
 			}
+		}
+	}
+}
+
+func decodeMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
+	if len(receiver.ReadableReceivedMsgs) > 0 {
+		for _, msg := range receiver.ReadableReceivedMsgs {
+			if len(receiver.ReadableReceivedMsgs) == 0 {
+				continue
+			}
+			if msg.ChannelId == -1 {
+				logrus.Info("Listening to channel: ", msg.Content)
+				continue
+			}
+
+			logrus.Info("Received message: ", receiver.ReadableReceivedMsgs)
+
+			WriteMessage(tcpConsumer, receiver)
 		}
 	}
 }
