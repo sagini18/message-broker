@@ -73,6 +73,8 @@ func TestBroadcast(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
+	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
+
 	allMessags := messageQueue.Get()
 	assert.Equal(t, 1, len(allMessags[123]))
 	assert.Equal(t, "Hello, World!", allMessags[123][0].Content)
