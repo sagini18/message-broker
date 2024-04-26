@@ -26,7 +26,6 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		var msgs []channelconsumer.Message
 		if err := json.Unmarshal(messageBytes, &msgs); err != nil {
 			return fmt.Errorf("tcpconn.listenToConsumerMessages(): json.Unmarshal error: %v", err)
-
 		}
 
 		for _, msg := range msgs {
