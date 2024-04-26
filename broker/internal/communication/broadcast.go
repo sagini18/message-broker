@@ -18,7 +18,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	channelId, err := strconv.Atoi(id)
 	if err != nil {
-		return fmt.Errorf("messagequeue.AddToQueue(): strconv.Atoi error: %v", err)
+		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
 	}
 
 	newId := messageIdGenerator.NewId()
@@ -30,7 +30,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	allMessages := messageQueue.Get()
 
 	if error := writeMessage(allMessages[channelId], channelId, consumerStorage); error != nil {
-		logrus.Errorf("messagequeue.AddToQueue(): writeMessage error: %v", error)
+		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 	}
 
 	return context.JSON(http.StatusOK, allMessages[channelId])
@@ -43,7 +43,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 		if slices.Contains(consumer.SubscribedChannels, id) {
 			messageBytes, err := json.Marshal(messageCacheData)
 			if err != nil {
-				return fmt.Errorf("messagequeue.writeMessage(): json.Marshal error: %v", err)
+				return fmt.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
 			}
 
 			if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
@@ -51,7 +51,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 					store.Remove(consumer.Id)
 					continue
 				}
-				return fmt.Errorf("messagequeue.writeMessage(): consumer.TcpConn.Write error: %v", err)
+				return fmt.Errorf("communication.writeMessage(): consumer.TcpConn.Write error: %v", err)
 			}
 		}
 	}

@@ -52,7 +52,7 @@ func (t *TCPServer) Listen() error {
 			t.messageQueue.SendPendingMessages(channel, conn)
 
 			go func() {
-				if listenToConsumerMessages(conn, consumer, t.consumerStore); err != nil {
+				if err := listenToConsumerMessages(conn, consumer, t.consumerStore); err != nil {
 					logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
 				}
 			}()
