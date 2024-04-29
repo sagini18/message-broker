@@ -66,3 +66,17 @@ func TestHandleNewClientConnection(t *testing.T) {
 		assert.Equal(t, expectedChannel, consumer.SubscribedChannels[0])
 	}
 }
+
+// func TestListenToConsumerMessages(t *testing.T) {
+// 	mockStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
+// 	mockConn := &MockConn{}
+
+// 	consumer := &channelconsumer.Consumer{
+// 		Id:                 1,
+// 		SubscribedChannels: []int{123},
+// 		TcpConn:            mockConn,
+// 	}
+// 	mockStorage.Add(consumer)
+
+// 	go listenToConsumerMessages(mockConn, consumer, mockStorage)
+// }

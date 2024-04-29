@@ -3,10 +3,10 @@ package communication
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -40,20 +40,24 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 	allConsumers := store.Get()
 
 	for _, consumer := range allConsumers {
-		if slices.Contains(consumer.SubscribedChannels, id) {
-			messageBytes, err := json.Marshal(messageCacheData)
-			if err != nil {
-				return fmt.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
-			}
+		if !slices.Contains(consumer.SubscribedChannels, id) {
+			continue
+		}
 
-			if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
-				if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-					store.Remove(consumer.Id)
-					continue
-				}
+		messageBytes, err := json.Marshal(messageCacheData)
+		if err != nil {
+			return fmt.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
+		}
+
+		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
+			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "write" {
 				return fmt.Errorf("communication.writeMessage(): consumer.TcpConn.Write error: %v", err)
 			}
+
+			store.Remove(consumer.Id)
+			continue
 		}
+
 	}
 	return nil
 }

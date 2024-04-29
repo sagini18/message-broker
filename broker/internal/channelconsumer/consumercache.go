@@ -40,6 +40,7 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 	defer cc.mu.Unlock()
 
 	delete(cc.consumers, consumerId)
+	logrus.Info("ConsumerCache after Removed: ", cc.consumers)
 }
 
 func (cc *InMemoryConsumerCache) Get() map[int]Consumer {
