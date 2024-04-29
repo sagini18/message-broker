@@ -45,20 +45,25 @@ func (mc *InMemoryMessageCache) Remove(message Message) {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	if cacheMessages, found := mc.messages[message.ChannelId]; found {
-		for i, msg := range cacheMessages {
-			if msg.ID == message.ID {
-				mc.messages[message.ChannelId] = append(cacheMessages[:i], cacheMessages[i+1:]...)
+	cacheMessages, found := mc.messages[message.ChannelId]
 
-				if len(mc.messages[message.ChannelId]) == 0 {
-					delete(mc.messages, message.ChannelId)
-				}
+	if !found {
+		return
+	}
 
-				logrus.Info("MessageCache after Deleted: ", mc.messages)
-				break
+	for i, msg := range cacheMessages {
+		if msg.ID == message.ID {
+			mc.messages[message.ChannelId] = append(cacheMessages[:i], cacheMessages[i+1:]...)
+
+			if len(mc.messages[message.ChannelId]) == 0 {
+				delete(mc.messages, message.ChannelId)
 			}
+
+			logrus.Info("MessageCache after Deleted: ", mc.messages)
+			break
 		}
 	}
+
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection net.Conn) {

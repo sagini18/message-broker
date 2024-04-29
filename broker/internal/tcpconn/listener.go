@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sirupsen/logrus"
@@ -49,13 +48,13 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 	for {
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
-			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-				if c := store.GetConsumer(consumer.Id); c.Id == consumer.Id {
-					store.Remove(consumer.Id)
-				}
-				continue
+			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" {
+				return buffer, totalBytesRead, err
 			}
-			return buffer, totalBytesRead, err
+			if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
+				store.Remove(consumer.Id)
+			}
+			continue
 		}
 
 		totalBytesRead += n
@@ -65,9 +64,8 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 			newBuffer := make([]byte, newBufferSize)
 			copy(newBuffer, buffer)
 			buffer = newBuffer
-		} else {
-			break
 		}
+
+		return buffer, totalBytesRead, nil
 	}
-	return buffer, totalBytesRead, nil
 }
