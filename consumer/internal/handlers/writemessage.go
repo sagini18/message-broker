@@ -8,16 +8,16 @@ import (
 )
 
 func WriteMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
-	if receiver.ReceivedMessage != nil {
-		_, err := tcpConsumer.Conn.Write(receiver.ReceivedMessage)
-
-		fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
-
-		if err != nil {
-			logrus.Error("Error in writing data: ", err)
-			return
-		}
-		receiver.ReceivedMessage = make([]byte, 1024)
-		receiver.ReadableReceivedMsgs = make([]types.Message, 0)
+	if receiver.ReceivedMessage == nil {
+		return
 	}
+
+	if _, err := tcpConsumer.Conn.Write(receiver.ReceivedMessage); err != nil {
+		logrus.Error("Error in writing data: ", err)
+		return
+	}
+	fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
+
+	receiver.ReceivedMessage = make([]byte, 1024)
+	receiver.ReadableReceivedMsgs = make([]types.Message, 0)
 }
