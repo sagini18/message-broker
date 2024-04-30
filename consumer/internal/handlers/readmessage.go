@@ -4,40 +4,51 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 
 	"github.com/sagini18/message-broker/consumer/internal/types"
 	"github.com/sirupsen/logrus"
 )
 
-func ReadMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
+func ReadMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 	for {
-		totalBytesRead := 0
-		buffer := make([]byte, 200)
 
-		for {
-			n, err := tcpConsumer.Conn.Read(buffer[totalBytesRead:])
-			if err != nil {
-				logrus.Error("Error in reading data: ", err)
-				return
-			}
-
-			totalBytesRead += n
-
-			if totalBytesRead >= len(buffer) {
-				newBufferSize := len(buffer) * 2
-				newBuffer := make([]byte, newBufferSize)
-				copy(newBuffer, buffer)
-				buffer = newBuffer
-			}
-			break
+		buffer, totalBytesRead, err := readAndExpandBuffer(tcpConsumer)
+		if err != nil {
+			logrus.Error("Error in reading data: ", err)
+			return
 		}
+
 		receiver.NewReceivedMessage(buffer[:totalBytesRead])
 
 		unmarshalMessage(receiver, tcpConsumer, totalBytesRead)
 	}
 }
 
-func unmarshalMessage(receiver *types.Receiver, tcpConsumer *types.TcpConn, totalBytesRead int) {
+func readAndExpandBuffer(tcpConsumer net.Conn) ([]byte, int, error) {
+	totalBytesRead := 0
+	buffer := make([]byte, 200)
+
+	for {
+		n, err := tcpConsumer.Read(buffer[totalBytesRead:])
+		if err != nil {
+			return buffer, totalBytesRead, err
+		}
+
+		totalBytesRead += n
+
+		if totalBytesRead >= len(buffer) {
+			newBufferSize := len(buffer) * 2
+			newBuffer := make([]byte, newBufferSize)
+			copy(newBuffer, buffer)
+			buffer = newBuffer
+			continue
+		}
+		return buffer, totalBytesRead, nil
+	}
+}
+
+func unmarshalMessage(receiver *types.Receiver, tcpConsumer net.Conn, totalBytesRead int) {
 	if totalBytesRead <= 0 {
 		return
 	}
@@ -61,7 +72,7 @@ func unmarshalMessage(receiver *types.Receiver, tcpConsumer *types.TcpConn, tota
 	}
 }
 
-func decodeMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
+func decodeMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 	if len(receiver.ReadableReceivedMsgs) <= 0 {
 		return
 	}

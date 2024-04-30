@@ -19,12 +19,12 @@ func main() {
 		logrus.Fatal("Error in connecting to the server: handlers.InitConnection(): ", err)
 	}
 
-	if err := handlers.HandleChannel(tcpConn); err != nil {
+	if err := handlers.HandleChannel(tcpConn.Conn); err != nil {
 		logrus.Error("Error in handling channel: handlers.HandleChannel(): ", err)
 		return
 	}
 
-	handlers.ReadMessage(tcpConn, receiver)
+	handlers.ReadMessage(tcpConn.Conn, receiver)
 }
 
 func configureLogger() {

@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"fmt"
-
-	"github.com/sagini18/message-broker/consumer/internal/types"
+	"net"
 )
 
-func HandleChannel(tcpConsumer *types.TcpConn) error {
+func HandleChannel(tcpConsumer net.Conn) error {
 	var input string
 	fmt.Println("Enter the channel number you want to listen to: ")
 	fmt.Scanln(&input)
@@ -16,7 +15,7 @@ func HandleChannel(tcpConsumer *types.TcpConn) error {
 		fmt.Scanln(&input)
 	}
 
-	if _, err := tcpConsumer.Conn.Write([]byte(input)); err != nil {
+	if _, err := tcpConsumer.Write([]byte(input)); err != nil {
 		return err
 	}
 	return nil
