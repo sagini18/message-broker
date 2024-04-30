@@ -2,17 +2,18 @@ package handlers
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/sagini18/message-broker/consumer/internal/types"
 	"github.com/sirupsen/logrus"
 )
 
-func WriteMessage(tcpConsumer *types.TcpConn, receiver *types.Receiver) {
+func WriteMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 	if receiver.ReceivedMessage == nil {
 		return
 	}
 
-	if _, err := tcpConsumer.Conn.Write(receiver.ReceivedMessage); err != nil {
+	if _, err := tcpConsumer.Write(receiver.ReceivedMessage); err != nil {
 		logrus.Error("Error in writing data: ", err)
 		return
 	}

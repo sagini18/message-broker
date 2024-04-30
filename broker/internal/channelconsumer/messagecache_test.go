@@ -13,7 +13,7 @@ type ConnSpy struct {
 	writeBuffer bytes.Buffer
 }
 
-func (m *ConnSpy) Read(b []byte) (n int, err error) {
+func (c *ConnSpy) Read(b []byte) (n int, err error) {
 	copy(b, []byte("123"))
 	return len("123"), nil
 }
@@ -22,27 +22,27 @@ func (c *ConnSpy) Write(b []byte) (int, error) {
 	return c.writeBuffer.Write(b)
 }
 
-func (m *ConnSpy) Close() error {
+func (c *ConnSpy) Close() error {
 	return nil
 }
 
-func (m *ConnSpy) LocalAddr() net.Addr {
+func (c *ConnSpy) LocalAddr() net.Addr {
 	return nil
 }
 
-func (m *ConnSpy) RemoteAddr() net.Addr {
+func (c *ConnSpy) RemoteAddr() net.Addr {
 	return nil
 }
 
-func (m *ConnSpy) SetDeadline(t time.Time) error {
+func (c *ConnSpy) SetDeadline(t time.Time) error {
 	return nil
 }
 
-func (m *ConnSpy) SetReadDeadline(t time.Time) error {
+func (c *ConnSpy) SetReadDeadline(t time.Time) error {
 	return nil
 }
 
-func (m *ConnSpy) SetWriteDeadline(t time.Time) error {
+func (c *ConnSpy) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 

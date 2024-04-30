@@ -18,7 +18,7 @@ type ConnSpy struct {
 	writeBuffer bytes.Buffer
 }
 
-func (m *ConnSpy) Read(b []byte) (n int, err error) {
+func (c *ConnSpy) Read(b []byte) (n int, err error) {
 	copy(b, []byte("123"))
 	return len("123"), nil
 }
@@ -26,27 +26,27 @@ func (m *ConnSpy) Read(b []byte) (n int, err error) {
 func (c *ConnSpy) Write(b []byte) (int, error) {
 	return c.writeBuffer.Write(b)
 }
-func (m *ConnSpy) Close() error {
+func (c *ConnSpy) Close() error {
 	return nil
 }
 
-func (m *ConnSpy) LocalAddr() net.Addr {
+func (c *ConnSpy) LocalAddr() net.Addr {
 	return nil
 }
 
-func (m *ConnSpy) RemoteAddr() net.Addr {
+func (c *ConnSpy) RemoteAddr() net.Addr {
 	return nil
 }
 
-func (m *ConnSpy) SetDeadline(t time.Time) error {
+func (c *ConnSpy) SetDeadline(t time.Time) error {
 	return nil
 }
 
-func (m *ConnSpy) SetReadDeadline(t time.Time) error {
+func (c *ConnSpy) SetReadDeadline(t time.Time) error {
 	return nil
 }
 
-func (m *ConnSpy) SetWriteDeadline(t time.Time) error {
+func (c *ConnSpy) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
@@ -78,4 +78,28 @@ func TestBroadcast(t *testing.T) {
 	allMessags := messageQueue.Get()
 	assert.Equal(t, 1, len(allMessags[123]))
 	assert.Equal(t, "Hello, World!", allMessags[123][0].Content)
+}
+
+func BenchmarkBroadcast(b *testing.B) {
+	e := echo.New()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/123", strings.NewReader(`{"content": "Hello, World!"}`))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues("123")
+
+	connSpy := &ConnSpy{}
+
+	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
+	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: connSpy})
+	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
+	messageQueue := channelconsumer.NewInMemoryMessageQueue()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
+		assert.Nil(b, err)
+	}
 }
