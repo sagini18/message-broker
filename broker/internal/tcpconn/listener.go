@@ -48,7 +48,7 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 	for {
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
-			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" {
+			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" { //race conditions only in the image
 				return buffer, totalBytesRead, err
 			}
 			if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
