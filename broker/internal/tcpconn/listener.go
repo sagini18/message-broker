@@ -17,8 +17,12 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		if err != nil {
 			return fmt.Errorf("tcpconn.listenToConsumerMessages(): connection.Read error: %v", err)
 		}
+		fmt.Println("Total bytes read: ", totalBytesRead)
+		fmt.Println("Len Buffer: ", len(buffer))
 
 		messageBytes := buffer[:totalBytesRead]
+
+		fmt.Println("Message received: ", string(messageBytes))
 
 		var msgs []channelconsumer.Message
 		if err := json.Unmarshal(messageBytes, &msgs); err != nil {
@@ -56,6 +60,7 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 			newBuffer := make([]byte, newBufferSize)
 			copy(newBuffer, buffer)
 			buffer = newBuffer
+			continue
 		}
 
 		return buffer, totalBytesRead, nil
