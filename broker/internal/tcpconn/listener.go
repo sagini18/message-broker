@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sirupsen/logrus"
 )
 
 func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageQueue) error {
@@ -17,12 +16,8 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		if err != nil {
 			return fmt.Errorf("tcpconn.listenToConsumerMessages(): connection.Read error: %v", err)
 		}
-		fmt.Println("Total bytes read: ", totalBytesRead)
-		fmt.Println("Len Buffer: ", len(buffer))
 
 		messageBytes := buffer[:totalBytesRead]
-
-		fmt.Println("Message received: ", string(messageBytes))
 
 		var msgs []channelconsumer.Message
 		if err := json.Unmarshal(messageBytes, &msgs); err != nil {
@@ -30,7 +25,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			logrus.Info("Message received as ack: ", msg)
+			// logrus.Info("Message received as ack: ", msg)
 			messageQueue.Add(msg)
 		}
 
