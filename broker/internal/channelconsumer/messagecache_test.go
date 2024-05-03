@@ -47,7 +47,7 @@ func (c *ConnSpy) SetWriteDeadline(t time.Time) error {
 }
 
 func TestMessageAdd(t *testing.T) {
-	mockQueue := NewInMemoryMessageQueue()
+	mockQueue := NewInMemoryMessageStore()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -63,7 +63,7 @@ func TestMessageAdd(t *testing.T) {
 }
 
 func TestMessageRemove(t *testing.T) {
-	mockQueue := NewInMemoryMessageQueue()
+	mockQueue := NewInMemoryMessageStore()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -81,7 +81,7 @@ func TestMessageRemove(t *testing.T) {
 }
 
 func TestSendPendingMessages(t *testing.T) {
-	mockQueue := NewInMemoryMessageQueue()
+	mockQueue := NewInMemoryMessageStore()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -100,7 +100,7 @@ func TestSendPendingMessages(t *testing.T) {
 }
 
 func TestGetAllMessages(t *testing.T) {
-	mockQueue := NewInMemoryMessageQueue()
+	mockQueue := NewInMemoryMessageStore()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,

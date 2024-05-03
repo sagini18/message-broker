@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type MessageQueue interface {
+type MessageStorage interface {
 	Add(message Message)
 	Remove(message Message)
 	SendPendingMessages(channelId int, connection net.Conn)
@@ -21,7 +21,7 @@ type InMemoryMessageCache struct {
 	messages map[int][]Message
 }
 
-func NewInMemoryMessageQueue() *InMemoryMessageCache {
+func NewInMemoryMessageStore() *InMemoryMessageCache {
 	return &InMemoryMessageCache{
 		messages: make(map[int][]Message),
 	}

@@ -9,9 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var messageChan = make(chan channelconsumer.Message)
-
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageQueue) error {
 	defer connection.Close()
 
 	for {
@@ -28,16 +26,10 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			messageChan <- msg
+			logrus.Info("Message received as ack: ", msg)
+			messageQueue.Add(msg)
 		}
-	}
-}
 
-func removeMessages(queue channelconsumer.MessageQueue) {
-	for msg := range messageChan {
-		logrus.Info("Received message from consumer as ack: ", msg)
-
-		queue.Remove(msg)
 	}
 }
 
