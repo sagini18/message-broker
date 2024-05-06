@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
+func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
 	id := context.Param("id")
 
 	channelId, err := strconv.Atoi(id)
@@ -25,11 +25,12 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	messageBody := channelconsumer.NewMessage(newId, channelId, nil)
 	context.Bind(messageBody)
 
-	messageQueue.Add(*messageBody)
+	messageStore.Add(*messageBody)
 
-	allMessages := messageQueue.Get()
+	allMessages := messageStore.Get()
+	messageCacheData := allMessages[channelId]
 
-	if error := writeMessage(allMessages[channelId], channelId, consumerStorage); error != nil {
+	if error := writeMessage(messageCacheData, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 	}
 
@@ -51,7 +52,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 
 		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
 			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "write" {
-				return fmt.Errorf("communication.writeMessage(): consumer.TcpConn.Write error: %v", err)
+				continue
 			}
 
 			store.Remove(consumer.Id)

@@ -47,11 +47,10 @@ func (m *MockConn) SetWriteDeadline(t time.Time) error {
 func TestHandleNewClientConnection(t *testing.T) {
 	mockConsumerStore := channelconsumer.NewInMemoryInMemoryConsumerCache()
 	mockMessageStore := channelconsumer.NewInMemoryMessageStore()
-	mockMessageQueue := channelconsumer.NewMessageChannel()
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 
-	server := New(":8081", mockConsumerStore, mockMessageStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator)
+	server := New(":8081", mockConsumerStore, mockMessageStore, mockConsumerIdGenerator, mockMessageIdGenerator)
 
 	mockConn := &MockConn{}
 

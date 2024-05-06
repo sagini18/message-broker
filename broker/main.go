@@ -15,10 +15,9 @@ func main() {
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
 	messageStore := channelconsumer.NewInMemoryMessageStore()
-	messageQueue := channelconsumer.NewMessageChannel()
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageStore, messageQueue, consumerIdGenerator, messageIdGenerator)
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageStore, consumerIdGenerator, messageIdGenerator)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {

@@ -17,7 +17,7 @@ type MessageStorage interface {
 }
 
 type InMemoryMessageCache struct {
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	messages map[int][]Message
 }
 
@@ -46,31 +46,33 @@ func (mc *InMemoryMessageCache) Remove(message Message) {
 	defer mc.mu.Unlock()
 
 	cacheMessages, found := mc.messages[message.ChannelId]
-
 	if !found {
 		return
 	}
 
-	for i, msg := range cacheMessages {
-		if msg.ID == message.ID {
-			mc.messages[message.ChannelId] = append(cacheMessages[:i], cacheMessages[i+1:]...)
-
-			if len(mc.messages[message.ChannelId]) == 0 {
-				delete(mc.messages, message.ChannelId)
-			}
-
-			logrus.Info("MessageCache after Deleted: ", mc.messages)
-			break
+	var updatedMessages []Message
+	for _, msg := range cacheMessages {
+		if msg.ID != message.ID {
+			updatedMessages = append(updatedMessages, msg)
 		}
 	}
-
+	mc.messages[message.ChannelId] = updatedMessages
+	if len(updatedMessages) == 0 {
+		delete(mc.messages, message.ChannelId)
+	}
+	logrus.Info("MessageCache after Removed: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection net.Conn) {
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 
-	if messages, found := mc.messages[channelId]; found {
+	messagesCopy := make(map[int][]Message)
+	for k, v := range mc.messages {
+		messagesCopy[k] = append([]Message{}, v...)
+	}
+
+	if messages, found := messagesCopy[channelId]; found {
 		messageBytes, err := json.Marshal(messages)
 		if err != nil {
 			logrus.Error("SendPendingMessages() Error while marshalling message: ", err)
@@ -85,8 +87,8 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection ne
 }
 
 func (mc *InMemoryMessageCache) Get() map[int][]Message {
-	mc.mu.Lock()
-	defer mc.mu.Unlock()
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 
 	return mc.messages
 }
