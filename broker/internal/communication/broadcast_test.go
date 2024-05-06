@@ -75,9 +75,9 @@ func TestBroadcast(t *testing.T) {
 
 	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
 
-	allMessags := messageStore.Get()
-	assert.Equal(t, 1, len(allMessags[123]))
-	assert.Equal(t, "Hello, World!", allMessags[123][0].Content)
+	allMessags := messageStore.GetMessages(123)
+	assert.Equal(t, 1, len(allMessags))
+	assert.Equal(t, "Hello, World!", allMessags[0].Content)
 }
 
 func BenchmarkBroadcast(b *testing.B) {

@@ -27,14 +27,13 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 
 	messageStore.Add(*messageBody)
 
-	allMessages := messageStore.Get()
-	messageCacheData := allMessages[channelId]
+	messageCacheData := messageStore.GetMessages(channelId)
 
 	if error := writeMessage(messageCacheData, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 	}
 
-	return context.JSON(http.StatusOK, allMessages[channelId])
+	return context.JSON(http.StatusOK, messageCacheData)
 }
 
 func writeMessage(messageCacheData []channelconsumer.Message, id int, store *channelconsumer.InMemoryConsumerCache) error {

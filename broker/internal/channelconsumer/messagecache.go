@@ -2,7 +2,6 @@ package channelconsumer
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"sync"
 
@@ -13,11 +12,11 @@ type MessageStorage interface {
 	Add(message Message)
 	Remove(message Message)
 	SendPendingMessages(channelId int, connection net.Conn)
-	Get() map[int][]Message
+	GetMessages(channelId int) []Message
 }
 
 type InMemoryMessageCache struct {
-	mu       sync.RWMutex
+	mu       sync.Mutex
 	messages map[int][]Message
 }
 
@@ -33,12 +32,12 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 
 	if cacheMessages, found := mc.messages[message.ChannelId]; found {
 		cacheMessages = append(cacheMessages, message)
-		mc.messages[message.ChannelId] = cacheMessages
+		mc.messages[message.ChannelId] = cacheMessages //data race
 	} else {
 		mc.messages[message.ChannelId] = []Message{message}
 	}
-	fmt.Println("----------------------------------------------------------------------------------")
-	logrus.Info("MessageCache after Added: ", mc.messages)
+	// fmt.Println("----------------------------------------------------------------------------------")
+	// logrus.Info("MessageCache after Added: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) Remove(message Message) {
@@ -60,12 +59,12 @@ func (mc *InMemoryMessageCache) Remove(message Message) {
 	if len(updatedMessages) == 0 {
 		delete(mc.messages, message.ChannelId)
 	}
-	logrus.Info("MessageCache after Removed: ", mc.messages)
+	// logrus.Info("MessageCache after Removed: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection net.Conn) {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
 
 	messagesCopy := make(map[int][]Message)
 	for k, v := range mc.messages {
@@ -86,9 +85,9 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection ne
 	}
 }
 
-func (mc *InMemoryMessageCache) Get() map[int][]Message {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
+func (mc *InMemoryMessageCache) GetMessages(channelId int) []Message {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
 
-	return mc.messages
+	return mc.messages[channelId]
 }
