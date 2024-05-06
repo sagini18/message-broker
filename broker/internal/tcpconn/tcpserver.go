@@ -13,16 +13,16 @@ import (
 type TCPServer struct {
 	addr                string
 	consumerStore       channelconsumer.Storage
-	messageQueue        channelconsumer.MessageQueue
+	messageStore        channelconsumer.MessageStorage
 	consumerIdGenerator channelconsumer.IdGenerator
 	messageIdGenerator  channelconsumer.IdGenerator
 }
 
-func New(addr string, store channelconsumer.Storage, queue channelconsumer.MessageQueue, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator) *TCPServer {
+func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator) *TCPServer {
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
-		messageQueue:        queue,
+		messageStore:        msgStore,
 		consumerIdGenerator: consumerIdGenerator,
 		messageIdGenerator:  messageIdGenerator,
 	}
@@ -49,15 +49,13 @@ func (t *TCPServer) Listen() error {
 				return
 			}
 
-			t.messageQueue.SendPendingMessages(channel, conn)
+			t.messageStore.SendPendingMessages(channel, conn)
 
 			go func() {
-				if err := listenToConsumerMessages(conn, consumer, t.consumerStore); err != nil {
+				if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageStore); err != nil {
 					logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
 				}
 			}()
-
-			removeMessages(t.messageQueue)
 		}()
 	}
 }

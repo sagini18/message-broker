@@ -32,7 +32,10 @@ func readAndExpandBuffer(tcpConsumer net.Conn) ([]byte, int, error) {
 	for {
 		n, err := tcpConsumer.Read(buffer[totalBytesRead:])
 		if err != nil {
-			return buffer, totalBytesRead, err
+			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" {
+				continue
+			}
+			return nil, 0, fmt.Errorf("readAndExpandBuffer(): %v", err)
 		}
 
 		totalBytesRead += n

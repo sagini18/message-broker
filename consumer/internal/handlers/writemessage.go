@@ -14,7 +14,7 @@ func WriteMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 	}
 
 	if _, err := tcpConsumer.Write(receiver.ReceivedMessage); err != nil {
-		logrus.Error("Error in writing data: ", err)
+		logrus.Error("Error in WriteMessage(): ", err)
 		return
 	}
 	fmt.Println("Sent message: ", string(receiver.ReceivedMessage))

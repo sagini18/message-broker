@@ -45,12 +45,12 @@ func (m *MockConn) SetWriteDeadline(t time.Time) error {
 }
 
 func TestHandleNewClientConnection(t *testing.T) {
-	mockStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
-	mockMessageQueue := channelconsumer.NewInMemoryMessageQueue()
+	mockConsumerStore := channelconsumer.NewInMemoryInMemoryConsumerCache()
+	mockMessageStore := channelconsumer.NewInMemoryMessageStore()
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 
-	server := New(":8081", mockStorage, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator)
+	server := New(":8081", mockConsumerStore, mockMessageStore, mockConsumerIdGenerator, mockMessageIdGenerator)
 
 	mockConn := &MockConn{}
 
@@ -68,7 +68,7 @@ func TestHandleNewClientConnection(t *testing.T) {
 }
 
 // func TestListenToConsumerMessages(t *testing.T) {
-// 	mockStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
+// 	mockConsumerStore := channelconsumer.NewInMemoryInMemoryConsumerCache()
 // 	mockConn := &MockConn{}
 
 // 	consumer := &channelconsumer.Consumer{
@@ -76,7 +76,7 @@ func TestHandleNewClientConnection(t *testing.T) {
 // 		SubscribedChannels: []int{123},
 // 		TcpConn:            mockConn,
 // 	}
-// 	mockStorage.Add(consumer)
+// 	mockConsumerStore.Add(consumer)
 
-// 	go listenToConsumerMessages(mockConn, consumer, mockStorage)
+// 	go listenToConsumerMessages(mockConn, consumer, mockConsumerStore)
 // }

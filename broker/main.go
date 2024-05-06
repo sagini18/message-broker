@@ -13,11 +13,11 @@ import (
 func main() {
 	configureLogger()
 
-	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
+	messageStore := channelconsumer.NewInMemoryMessageStore()
+	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	messageQueue := channelconsumer.NewInMemoryMessageQueue()
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator)
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageStore, consumerIdGenerator, messageIdGenerator)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
@@ -27,7 +27,7 @@ func main() {
 
 	app := echo.New()
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
+		return communication.Broadcast(c, messageStore, consumerStorage, messageIdGenerator)
 	})
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)

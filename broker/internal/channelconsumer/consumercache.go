@@ -15,7 +15,7 @@ type Storage interface {
 }
 
 type InMemoryConsumerCache struct {
-	mu        sync.Mutex
+	mu        sync.RWMutex
 	consumers map[int]Consumer
 }
 
@@ -44,15 +44,15 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 }
 
 func (cc *InMemoryConsumerCache) Get() map[int]Consumer {
-	cc.mu.Lock()
-	defer cc.mu.Unlock()
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
 
 	return cc.consumers
 }
 
 func (cc *InMemoryConsumerCache) GetConsumer(consumerId int) Consumer {
-	cc.mu.Lock()
-	defer cc.mu.Unlock()
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
 
 	return cc.consumers[consumerId]
 }
