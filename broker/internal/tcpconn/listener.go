@@ -7,7 +7,6 @@ import (
 	"net"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sirupsen/logrus"
 )
 
 func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageStore channelconsumer.MessageStorage) error {
@@ -43,7 +42,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			logrus.Info("Message received as ack: ", msg)
+			// logrus.Info("Message received as ack: ", msg)
 			messageStore.Remove(msg)
 		}
 	}
@@ -56,7 +55,7 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 	for {
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
-			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" { //race conditions only in the image
+			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" {
 				continue
 			}
 			if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
