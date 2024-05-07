@@ -13,12 +13,15 @@ func WriteMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 		return
 	}
 
-	if _, err := tcpConsumer.Write(receiver.ReceivedMessage); err != nil {
+	n, err := tcpConsumer.Write(receiver.ReceivedMessage)
+	if err != nil {
 		logrus.Error("Error in WriteMessage(): ", err)
 		return
 	}
-	fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
+	if n > 0 {
+		fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
+	}
 
-	receiver.ReceivedMessage = make([]byte, 1024)
+	receiver.ReceivedMessage = make([]byte, 0)
 	receiver.ReadableReceivedMsgs = make([]types.Message, 0)
 }

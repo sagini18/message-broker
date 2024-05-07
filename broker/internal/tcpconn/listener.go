@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sirupsen/logrus"
 )
 
 func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageStore channelconsumer.MessageStorage) error {
@@ -42,7 +44,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			// logrus.Info("Message received as ack: ", msg)
+			logrus.Info("Message received as ack: ", msg)
 			messageStore.Remove(msg)
 		}
 	}
@@ -55,13 +57,12 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 	for {
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
-			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "read" {
+			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
+				if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
+					store.Remove(consumer.Id)
+				}
 				continue
 			}
-			if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
-				store.Remove(consumer.Id)
-			}
-			continue
 		}
 
 		totalBytesRead += n

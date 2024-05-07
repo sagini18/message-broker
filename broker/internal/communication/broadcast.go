@@ -3,10 +3,10 @@ package communication
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -46,16 +46,18 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 
 		messageBytes, err := json.Marshal(messageCacheData)
 		if err != nil {
-			return fmt.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
+			logrus.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
+			continue
 		}
 
 		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
-			if opErr, ok := err.(*net.OpError); !ok && opErr.Op != "write" {
+			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
+				if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
+					store.Remove(consumer.Id)
+				}
 				continue
 			}
 
-			store.Remove(consumer.Id)
-			continue
 		}
 
 	}

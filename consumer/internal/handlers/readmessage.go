@@ -69,8 +69,6 @@ func unmarshalMessage(receiver *types.Receiver, tcpConsumer net.Conn, totalBytes
 			return
 		}
 
-		fmt.Println("------------------------------------------------------------------------------------------")
-
 		decodeMessage(tcpConsumer, receiver)
 	}
 }
