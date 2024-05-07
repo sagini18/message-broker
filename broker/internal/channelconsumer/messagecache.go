@@ -32,12 +32,11 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 
 	if cacheMessages, found := mc.messages[message.ChannelId]; found {
 		cacheMessages = append(cacheMessages, message)
-		mc.messages[message.ChannelId] = cacheMessages //data race
+		mc.messages[message.ChannelId] = cacheMessages
 	} else {
 		mc.messages[message.ChannelId] = []Message{message}
 	}
-	// fmt.Println("----------------------------------------------------------------------------------")
-	// logrus.Info("MessageCache after Added: ", mc.messages)
+	logrus.Info("MessageCache after Added: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) Remove(message Message) {
@@ -59,7 +58,7 @@ func (mc *InMemoryMessageCache) Remove(message Message) {
 	if len(updatedMessages) == 0 {
 		delete(mc.messages, message.ChannelId)
 	}
-	// logrus.Info("MessageCache after Removed: ", mc.messages)
+	logrus.Info("MessageCache after Removed: ", mc.messages)
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection net.Conn) {
