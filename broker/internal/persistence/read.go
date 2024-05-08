@@ -45,3 +45,23 @@ func Read(channelId int) ([]channelconsumer.Message, error) {
 
 	return messages, nil
 }
+
+func GetLastMessageId(channelId int) (int, error) {
+	fileData, err := Read(channelId)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(fileData) == 0 {
+		return 0, nil
+	}
+
+	lastMessageId := 0
+	for _, msg := range fileData {
+		if msg.ID > lastMessageId {
+			lastMessageId = msg.ID
+		}
+	}
+
+	return lastMessageId, nil
+}

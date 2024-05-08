@@ -22,6 +22,12 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
 	}
 
+	lastMessageId, err := persistence.GetLastMessageId(channelId)
+	if err != nil {
+		logrus.Errorf("communication.Broadcast(): getLastMessageId error: %v", err)
+	}
+	messageIdGenerator.SetLastId(lastMessageId)
+
 	newId := messageIdGenerator.NewId()
 	messageBody := channelconsumer.NewMessage(newId, channelId, nil)
 	context.Bind(messageBody)
