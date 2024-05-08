@@ -32,7 +32,7 @@ func CleanUp(msg channelconsumer.Message) error {
 			if err == io.EOF {
 				break
 			}
-			return fmt.Errorf("error in decoding JSON: %v", err)
+			return fmt.Errorf("persistence.CleanUp() : error in decoding JSON: %v", err)
 		}
 		if m.ChannelId == msg.ChannelId && m.ID == msg.ID {
 			continue

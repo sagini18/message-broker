@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -22,12 +23,6 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
 	}
 
-	lastMessageId, err := persistence.GetLastMessageId(channelId)
-	if err != nil {
-		logrus.Errorf("communication.Broadcast(): getLastMessageId error: %v", err)
-	}
-	messageIdGenerator.SetLastId(lastMessageId)
-
 	newId := messageIdGenerator.NewId()
 	messageBody := channelconsumer.NewMessage(newId, channelId, nil)
 	context.Bind(messageBody)
@@ -37,6 +32,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): json.Marshal error: %v", err)
 	}
 
+	time.Sleep(10 * time.Second)
 	if err := persistence.AppendToFile(jsonBody); err != nil {
 		logrus.Errorf("communication.Broadcast(): persistence.AppendToFile error: %v", err)
 	}
