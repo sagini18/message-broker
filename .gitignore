@@ -1,3 +1,4 @@
 *.exe 
 *.work
 *.sum
+*.persisted_messages.txt

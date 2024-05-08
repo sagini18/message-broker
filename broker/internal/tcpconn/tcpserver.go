@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,7 +50,10 @@ func (t *TCPServer) Listen() error {
 				return
 			}
 
-			t.messageStore.SendPendingMessages(channel, conn)
+			count := sendPersistedData(channel, conn)
+			if count == 0 {
+				t.messageStore.SendPendingMessages(channel, conn)
+			}
 
 			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageStore); err != nil {
 				logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
@@ -90,4 +94,27 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 	}
 
 	return channelInt, consumer, nil
+}
+
+func sendPersistedData(channel int, connection net.Conn) int {
+	fileData, err := persistence.Read(channel)
+	if err != nil {
+		logrus.Errorf("tcpserver.Listen(): persistence.Read() failed: %v", err)
+	}
+
+	if len(fileData) == 0 {
+		return 0
+	}
+
+	messageBytes, err := json.Marshal(fileData)
+	if err != nil {
+		logrus.Errorf("sendPersistedData(): json.Marshal error: %v", err)
+
+	}
+
+	if _, err = connection.Write(messageBytes); err != nil {
+		logrus.Errorf("sendPersistedData(): writing error: %v", err)
+	}
+	logrus.Info("Sent persisted data to consumer: ", fileData)
+	return len(fileData)
 }
