@@ -9,8 +9,8 @@ import (
 type Storage interface {
 	Add(consumer *Consumer)
 	Remove(consumerId int)
-	Get() map[int]Consumer
-	GetConsumer(consumerId int) Consumer
+	GetAll() map[int]Consumer
+	Get(consumerId int) Consumer
 }
 
 type InMemoryConsumerCache struct {
@@ -41,14 +41,14 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 	logrus.Info("ConsumerCache after Removed: ", cc.consumers)
 }
 
-func (cc *InMemoryConsumerCache) Get() map[int]Consumer {
+func (cc *InMemoryConsumerCache) GetAll() map[int]Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 
 	return cc.consumers
 }
 
-func (cc *InMemoryConsumerCache) GetConsumer(consumerId int) Consumer {
+func (cc *InMemoryConsumerCache) Get(consumerId int) Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 

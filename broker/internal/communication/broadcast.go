@@ -43,7 +43,7 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 
 	messageStore.Add(*messageBody)
 
-	messageCacheData := messageStore.GetMessages(channelId)
+	messageCacheData := messageStore.Get(channelId)
 
 	if error := writeMessage(messageCacheData, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
@@ -53,7 +53,7 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 }
 
 func writeMessage(messageCacheData []channelconsumer.Message, id int, store *channelconsumer.InMemoryConsumerCache) error {
-	allConsumers := store.Get()
+	allConsumers := store.GetAll()
 
 	for _, consumer := range allConsumers {
 		if !slices.Contains(consumer.SubscribedChannels, id) {
@@ -68,7 +68,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 
 		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-				if c := store.GetConsumer(consumer.Id); c.TcpConn != nil {
+				if c := store.Get(consumer.Id); c.TcpConn != nil {
 					store.Remove(consumer.Id)
 				}
 				continue

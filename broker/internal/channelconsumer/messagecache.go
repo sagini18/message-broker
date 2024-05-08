@@ -10,9 +10,9 @@ import (
 
 type MessageStorage interface {
 	Add(message Message)
-	Remove(message Message)
+	Remove(id int, channelId int)
+	Get(channelId int) []Message
 	SendPendingMessages(channelId int, connection net.Conn)
-	GetMessages(channelId int) []Message
 }
 
 type InMemoryMessageCache struct {
@@ -39,24 +39,24 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 	logrus.Info("MessageCache after Added: ", mc.messages)
 }
 
-func (mc *InMemoryMessageCache) Remove(message Message) {
+func (mc *InMemoryMessageCache) Remove(id int, channelId int) {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	cacheMessages, found := mc.messages[message.ChannelId]
+	cacheMessages, found := mc.messages[channelId]
 	if !found {
 		return
 	}
 
 	var updatedMessages []Message
 	for _, msg := range cacheMessages {
-		if msg.ID != message.ID {
+		if msg.ID != id {
 			updatedMessages = append(updatedMessages, msg)
 		}
 	}
-	mc.messages[message.ChannelId] = updatedMessages
+	mc.messages[channelId] = updatedMessages
 	if len(updatedMessages) == 0 {
-		delete(mc.messages, message.ChannelId)
+		delete(mc.messages, channelId)
 	}
 	logrus.Info("MessageCache after Removed: ", mc.messages)
 }
@@ -84,7 +84,7 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection ne
 	}
 }
 
-func (mc *InMemoryMessageCache) GetMessages(channelId int) []Message {
+func (mc *InMemoryMessageCache) Get(channelId int) []Message {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 

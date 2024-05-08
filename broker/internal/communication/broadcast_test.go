@@ -75,7 +75,7 @@ func TestBroadcast(t *testing.T) {
 
 	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
 
-	allMessags := messageStore.GetMessages(123)
+	allMessags := messageStore.Get(123)
 	assert.Equal(t, 1, len(allMessags))
 	assert.Equal(t, "Hello, World!", allMessags[0].Content)
 }

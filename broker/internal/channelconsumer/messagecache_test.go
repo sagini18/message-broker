@@ -55,7 +55,7 @@ func TestMessageAdd(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 
 	assert.Equal(t, 1, len(messages))
 
@@ -71,12 +71,12 @@ func TestMessageRemove(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 	assert.Equal(t, 1, len(messages))
 
-	mockQueue.Remove(mockMessage)
+	mockQueue.Remove(mockMessage.ID, mockMessage.ChannelId)
 
-	messages = mockQueue.GetMessages(1)
+	messages = mockQueue.Get(1)
 	assert.Equal(t, 0, len(messages))
 }
 
@@ -108,7 +108,7 @@ func TestGetAllMessages(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 
 	assert.Equal(t, 1, len(messages))
 
