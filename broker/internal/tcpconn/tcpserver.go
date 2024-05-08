@@ -14,7 +14,7 @@ import (
 type TCPServer struct {
 	addr                string
 	consumerStore       channelconsumer.Storage
-	messageStore        channelconsumer.MessageStorage
+	messageQueue        channelconsumer.MessageStorage
 	consumerIdGenerator channelconsumer.IdGenerator
 	messageIdGenerator  channelconsumer.IdGenerator
 }
@@ -23,7 +23,7 @@ func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.Me
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
-		messageStore:        msgStore,
+		messageQueue:        msgStore,
 		consumerIdGenerator: consumerIdGenerator,
 		messageIdGenerator:  messageIdGenerator,
 	}
@@ -52,10 +52,10 @@ func (t *TCPServer) Listen() error {
 
 			count := sendPersistedData(channel, conn)
 			if count == 0 {
-				t.messageStore.SendPendingMessages(channel, conn)
+				t.messageQueue.SendPendingMessages(channel, conn)
 			}
 
-			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageStore); err != nil {
+			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue); err != nil {
 				logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
 			}
 		}()

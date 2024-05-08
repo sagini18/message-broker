@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
 	id := context.Param("id")
 
 	channelId, err := strconv.Atoi(id)
@@ -41,9 +41,9 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 		logrus.Errorf("communication.Broadcast(): persistence.AppendToFile error: %v", err)
 	}
 
-	messageStore.Add(*messageBody)
+	messageQueue.Add(*messageBody)
 
-	messageCacheData := messageStore.Get(channelId)
+	messageCacheData := messageQueue.Get(channelId)
 
 	if error := writeMessage(messageCacheData, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)

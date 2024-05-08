@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageStore channelconsumer.MessageStorage) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage) error {
 	defer connection.Close()
 
 	for {
@@ -51,7 +51,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 				logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.CleanUp error: %v", err)
 			}
 
-			messageStore.Remove(msg.ID, msg.ChannelId)
+			messageQueue.Remove(msg.ID, msg.ChannelId)
 		}
 	}
 }

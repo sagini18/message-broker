@@ -65,9 +65,9 @@ func TestBroadcast(t *testing.T) {
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: ConnSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	messageStore := channelconsumer.NewInMemoryMessageStore()
+	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 
-	err := Broadcast(c, messageStore, consumerStorage, messageIdGenerator)
+	err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
 
 	assert.Nil(t, err)
 
@@ -75,7 +75,7 @@ func TestBroadcast(t *testing.T) {
 
 	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
 
-	allMessags := messageStore.Get(123)
+	allMessags := messageQueue.Get(123)
 	assert.Equal(t, 1, len(allMessags))
 	assert.Equal(t, "Hello, World!", allMessags[0].Content)
 }
@@ -95,11 +95,11 @@ func BenchmarkBroadcast(b *testing.B) {
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: connSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	messageStore := channelconsumer.NewInMemoryMessageStore()
+	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageStore, consumerStorage, messageIdGenerator)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
 		assert.Nil(b, err)
 	}
 }

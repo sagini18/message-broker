@@ -20,7 +20,7 @@ type InMemoryMessageCache struct {
 	messages map[int][]Message
 }
 
-func NewInMemoryMessageStore() *InMemoryMessageCache {
+func NewInMemoryMessageQueue() *InMemoryMessageCache {
 	return &InMemoryMessageCache{
 		messages: make(map[int][]Message),
 	}
