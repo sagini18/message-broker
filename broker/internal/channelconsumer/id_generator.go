@@ -1,6 +1,8 @@
 package channelconsumer
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type IdGenerator interface {
 	NewId() int
@@ -22,4 +24,8 @@ type SerialMessageIdGenerator struct {
 func (s *SerialMessageIdGenerator) NewId() int {
 	id := s.lastId.Add(1)
 	return int(id)
+}
+
+func (s *SerialMessageIdGenerator) SetLastId(id int) {
+	s.lastId.Store(uint32(id))
 }

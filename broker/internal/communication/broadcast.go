@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,9 +22,24 @@ func Broadcast(context echo.Context, messageStore *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
 	}
 
+	lastMessageId, err := persistence.GetLastMessageId(channelId)
+	if err != nil {
+		logrus.Errorf("communication.Broadcast(): getLastMessageId error: %v", err)
+	}
+	messageIdGenerator.SetLastId(lastMessageId)
+
 	newId := messageIdGenerator.NewId()
 	messageBody := channelconsumer.NewMessage(newId, channelId, nil)
 	context.Bind(messageBody)
+
+	jsonBody, err := json.Marshal(messageBody)
+	if err != nil {
+		return fmt.Errorf("communication.Broadcast(): json.Marshal error: %v", err)
+	}
+
+	if err := persistence.AppendToFile(jsonBody); err != nil {
+		logrus.Errorf("communication.Broadcast(): persistence.AppendToFile error: %v", err)
+	}
 
 	messageStore.Add(*messageBody)
 

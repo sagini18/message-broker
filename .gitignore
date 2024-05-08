@@ -1,3 +1,4 @@
 *.exe 
 *.work
 *.sum
+./internal/persistence/persisted_messages.txt
