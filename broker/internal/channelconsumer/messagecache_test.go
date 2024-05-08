@@ -47,7 +47,7 @@ func (c *ConnSpy) SetWriteDeadline(t time.Time) error {
 }
 
 func TestMessageAdd(t *testing.T) {
-	mockQueue := NewInMemoryMessageStore()
+	mockQueue := NewInMemoryMessageQueue()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -55,7 +55,7 @@ func TestMessageAdd(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 
 	assert.Equal(t, 1, len(messages))
 
@@ -63,7 +63,7 @@ func TestMessageAdd(t *testing.T) {
 }
 
 func TestMessageRemove(t *testing.T) {
-	mockQueue := NewInMemoryMessageStore()
+	mockQueue := NewInMemoryMessageQueue()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -71,17 +71,17 @@ func TestMessageRemove(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 	assert.Equal(t, 1, len(messages))
 
-	mockQueue.Remove(mockMessage)
+	mockQueue.Remove(mockMessage.ID, mockMessage.ChannelId)
 
-	messages = mockQueue.GetMessages(1)
+	messages = mockQueue.Get(1)
 	assert.Equal(t, 0, len(messages))
 }
 
 func TestSendPendingMessages(t *testing.T) {
-	mockQueue := NewInMemoryMessageStore()
+	mockQueue := NewInMemoryMessageQueue()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -100,7 +100,7 @@ func TestSendPendingMessages(t *testing.T) {
 }
 
 func TestGetAllMessages(t *testing.T) {
-	mockQueue := NewInMemoryMessageStore()
+	mockQueue := NewInMemoryMessageQueue()
 	mockMessage := Message{
 		ID:        1,
 		ChannelId: 1,
@@ -108,7 +108,7 @@ func TestGetAllMessages(t *testing.T) {
 
 	mockQueue.Add(mockMessage)
 
-	messages := mockQueue.GetMessages(1)
+	messages := mockQueue.Get(1)
 
 	assert.Equal(t, 1, len(messages))
 

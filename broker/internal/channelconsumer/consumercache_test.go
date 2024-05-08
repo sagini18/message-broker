@@ -15,7 +15,7 @@ func TestConsumerAdd(t *testing.T) {
 
 	mockStorage.Add(addedConsumer)
 
-	consumers := mockStorage.Get()
+	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
 	assert.Equal(t, *addedConsumer, consumers[1])
 }
@@ -29,12 +29,12 @@ func TestConsumerRemove(t *testing.T) {
 
 	mockStorage.Add(mockConsumer)
 
-	consumers := mockStorage.Get()
+	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
 
 	mockStorage.Remove(1)
 
-	consumers = mockStorage.Get()
+	consumers = mockStorage.GetAll()
 	assert.Equal(t, 0, len(consumers))
 }
 
@@ -47,7 +47,7 @@ func TestGetConsumer(t *testing.T) {
 
 	mockStorage.Add(mockConsumer)
 
-	consumer := mockStorage.GetConsumer(1)
+	consumer := mockStorage.Get(1)
 	assert.Equal(t, *mockConsumer, consumer)
 }
 
@@ -60,7 +60,7 @@ func TestGet(t *testing.T) {
 
 	mockStorage.Add(mockConsumer)
 
-	consumers := mockStorage.Get()
+	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
 	assert.Equal(t, *mockConsumer, consumers[1])
 }
