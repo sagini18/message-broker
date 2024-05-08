@@ -34,7 +34,7 @@ func Read(channelId int) ([]channelconsumer.Message, error) {
 			if err == io.EOF {
 				break
 			}
-			logrus.Error("Error in decoding JSON: ", err)
+			logrus.Error("persistence.Read() : Error in decoding JSON: ", err)
 			return nil, err
 		}
 		if msg.ChannelId != channelId {
@@ -46,22 +46,36 @@ func Read(channelId int) ([]channelconsumer.Message, error) {
 	return messages, nil
 }
 
-func GetLastMessageId(channelId int) (int, error) {
-	fileData, err := Read(channelId)
+func GetLastMessageId() (int, error) {
+	filePath := "./internal/persistence/persisted_messages.txt"
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return 0, fmt.Errorf("file does not exist: %v", err)
+	}
+
+	file, err := os.Open(filePath)
 	if err != nil {
+		logrus.Error("Error in opening file: ", err)
 		return 0, err
 	}
+	defer file.Close()
 
-	if len(fileData) == 0 {
-		return 0, nil
-	}
+	decoder := json.NewDecoder(file)
 
-	lastMessageId := 0
-	for _, msg := range fileData {
-		if msg.ID > lastMessageId {
-			lastMessageId = msg.ID
+	lastId := 0
+	for {
+		var msg channelconsumer.Message
+		if err := decoder.Decode(&msg); err != nil {
+			if err == io.EOF {
+				break
+			}
+			logrus.Error("persistence.GetLastMessageId() : Error in decoding JSON: ", err)
+			return 0, err
+		}
+		if msg.ID > lastId {
+			lastId = msg.ID
 		}
 	}
 
-	return lastMessageId, nil
+	return lastId, nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
+	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +19,12 @@ func main() {
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator)
+
+	lastMessageId, err := persistence.GetLastMessageId()
+	if err != nil {
+		logrus.Errorf("communication.Broadcast(): getLastMessageId error: %v", err)
+	}
+	messageIdGenerator.SetLastId(lastMessageId)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
