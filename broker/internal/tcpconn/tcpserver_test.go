@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,8 +50,9 @@ func TestHandleNewClientConnection(t *testing.T) {
 	mockMessageQueue := channelconsumer.NewInMemoryMessageQueue()
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
+	mockPersist := persistence.New()
 
-	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator)
+	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist)
 
 	mockConn := &MockConn{}
 

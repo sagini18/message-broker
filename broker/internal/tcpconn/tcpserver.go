@@ -18,15 +18,17 @@ type TCPServer struct {
 	messageQueue        channelconsumer.MessageStorage
 	consumerIdGenerator channelconsumer.IdGenerator
 	messageIdGenerator  channelconsumer.IdGenerator
+	persist             persistence.Persistence
 }
 
-func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator) *TCPServer {
+func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence) *TCPServer {
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
 		messageQueue:        msgStore,
 		consumerIdGenerator: consumerIdGenerator,
 		messageIdGenerator:  messageIdGenerator,
+		persist:             persist,
 	}
 }
 
@@ -51,12 +53,12 @@ func (t *TCPServer) Listen() error {
 				return
 			}
 
-			count := sendPersistedData(channel, conn)
+			count := sendPersistedData(channel, conn, t.persist)
 			if count == 0 {
 				t.messageQueue.SendPendingMessages(channel, conn)
 			}
 
-			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue); err != nil {
+			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist); err != nil {
 				logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
 			}
 		}()
@@ -97,9 +99,9 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 	return channelInt, consumer, nil
 }
 
-func sendPersistedData(channel int, connection net.Conn) int {
+func sendPersistedData(channel int, connection net.Conn, persist persistence.Persistence) int {
 	time.Sleep(10 * time.Second)
-	fileData, err := persistence.Read(channel)
+	fileData, err := persist.Read(channel)
 	if err != nil {
 		logrus.Errorf("tcpserver.Listen(): persistence.Read() failed: %v", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence) error {
 	defer connection.Close()
 
 	for {
@@ -47,7 +47,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		for _, msg := range msgs {
 			logrus.Info("Message received as ack: ", msg)
 
-			if err := persistence.CleanUp(msg); err != nil {
+			if err := persist.CleanUp(msg.ID, msg.ChannelId); err != nil {
 				logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.CleanUp error: %v", err)
 			}
 

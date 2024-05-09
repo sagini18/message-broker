@@ -18,13 +18,8 @@ func main() {
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator)
-
-	lastMessageId, err := persistence.GetLastMessageId()
-	if err != nil {
-		logrus.Errorf("communication.Broadcast(): getLastMessageId error: %v", err)
-	}
-	messageIdGenerator.SetLastId(lastMessageId)
+	persist := persistence.New()
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
@@ -34,7 +29,7 @@ func main() {
 
 	app := echo.New()
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist)
 	})
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)

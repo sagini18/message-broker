@@ -2,6 +2,8 @@ package channelconsumer
 
 import (
 	"sync/atomic"
+
+	"github.com/google/uuid"
 )
 
 type IdGenerator interface {
@@ -18,14 +20,9 @@ func (s *SerialConsumerIdGenerator) NewId() int {
 }
 
 type SerialMessageIdGenerator struct {
-	lastId atomic.Uint32
 }
 
 func (s *SerialMessageIdGenerator) NewId() int {
-	id := s.lastId.Add(1)
-	return int(id)
-}
-
-func (s *SerialMessageIdGenerator) SetLastId(id int) {
-	s.lastId.Store(uint32(id))
+	newUUID := uuid.New().ID()
+	return int(newUUID)
 }
