@@ -46,7 +46,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			// logrus.Info("Message received as ack: ", msg)
+			logrus.Info("Message received as ack: ", msg)
 
 			if err := persist.Remove(msg.ID); err != nil {
 				logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
