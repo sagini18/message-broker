@@ -1,13 +1,13 @@
 package persistence
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 
-	"github.com/gofrs/flock"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sirupsen/logrus"
@@ -21,7 +21,6 @@ type Persistence interface {
 
 type persistence struct {
 	filePath string
-	lock     *flock.Flock
 	mu       sync.Mutex
 }
 
@@ -32,7 +31,6 @@ func New() Persistence {
 	}
 	return &persistence{
 		filePath: config.FilePath,
-		lock:     flock.New(config.FilePath),
 	}
 }
 
@@ -46,11 +44,6 @@ func (p *persistence) Write(data []byte) error {
 		return err
 	}
 	defer file.Close()
-
-	// if err := p.lock.Lock(); err != nil {
-	// 	return fmt.Errorf("error in acquiring lock persistence.Write(): %v", err)
-	// }
-	// defer p.lock.Unlock()
 
 	if _, err := file.Write(data); err != nil {
 		logrus.Error("Error in writing to file: ", err)
@@ -67,11 +60,6 @@ func (p *persistence) Write(data []byte) error {
 func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	// if err := p.lock.RLock(); err != nil {
-	// 	return nil, fmt.Errorf("error in acquiring lock persistence.Read(): %v", err)
-	// }
-	// defer p.lock.Unlock()
 
 	if _, err := os.Stat(p.filePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %v", err)
@@ -105,50 +93,45 @@ func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
 
 	return messages, nil
 }
+
 func (p *persistence) Remove(messageId int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	tempFilePath := p.filePath + ".temp"
-
-	inputFile, err := os.Open(p.filePath)
+	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
 	if err != nil {
-		return fmt.Errorf("error opening input file: %v", err)
+		return fmt.Errorf("error opening file for read/write: %v", err)
 	}
-	defer inputFile.Close()
+	defer file.Close()
 
-	tempFile, err := os.Create(tempFilePath)
-	if err != nil {
-		return fmt.Errorf("error creating temporary output file: %v", err)
-	}
-	defer tempFile.Close()
+	var filteredData []byte
 
-	decoder := json.NewDecoder(inputFile)
-
-	encoder := json.NewEncoder(tempFile)
-
-	for decoder.More() {
-		var m channelconsumer.Message
-		if err := decoder.Decode(&m); err != nil {
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var msg channelconsumer.Message
+		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
 			return fmt.Errorf("error decoding JSON: %v", err)
 		}
-		if m.ID != messageId {
-			if err := encoder.Encode(m); err != nil {
-				return fmt.Errorf("error encoding JSON: %v", err)
-			}
+		if msg.ID != messageId {
+			filteredData = append(filteredData, scanner.Bytes()...)
+			filteredData = append(filteredData, '\n')
 		}
 	}
 
-	if err := inputFile.Close(); err != nil {
-		return fmt.Errorf("error closing input file: %v", err)
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error scanning file: %v", err)
 	}
 
-	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("error closing temporary file: %v", err)
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("error truncating file: %v", err)
 	}
 
-	if err := os.Rename(tempFilePath, p.filePath); err != nil {
-		return fmt.Errorf("error renaming temporary file: %v", err)
+	if _, err := file.Seek(0, 0); err != nil {
+		return fmt.Errorf("error seeking to file beginning: %v", err)
+	}
+
+	if _, err := file.Write(filteredData); err != nil {
+		return fmt.Errorf("error writing filtered data: %v", err)
 	}
 
 	return nil

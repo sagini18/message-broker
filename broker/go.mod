@@ -9,8 +9,6 @@ go 1.22.0
 
 require github.com/labstack/echo/v4 v4.12.0
 
-require github.com/gofrs/flock v0.8.1
-
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.6.0
