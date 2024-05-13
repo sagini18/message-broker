@@ -11,6 +11,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,8 +67,9 @@ func TestBroadcast(t *testing.T) {
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: ConnSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
+	persist := persistence.New()
 
-	err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
+	err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist)
 
 	assert.Nil(t, err)
 
@@ -96,10 +98,11 @@ func BenchmarkBroadcast(b *testing.B) {
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: connSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
+	persist := persistence.New()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist)
 		assert.Nil(b, err)
 	}
 }

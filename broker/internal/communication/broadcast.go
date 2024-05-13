@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -15,37 +14,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator) error {
-	id := context.Param("id")
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence) error {
 
-	channelId, err := strconv.Atoi(id)
+	channelId, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
 	}
 
-	newId := messageIdGenerator.NewId()
-	messageBody := channelconsumer.NewMessage(newId, channelId, nil)
-	context.Bind(messageBody)
+	messageId := messageIdGenerator.NewId()
+	message := channelconsumer.NewMessage(messageId, channelId, nil)
+	context.Bind(message)
 
-	jsonBody, err := json.Marshal(messageBody)
+	jsonBody, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("communication.Broadcast(): json.Marshal error: %v", err)
 	}
 
-	time.Sleep(10 * time.Second)
-	if err := persistence.AppendToFile(jsonBody); err != nil {
-		logrus.Errorf("communication.Broadcast(): persistence.AppendToFile error: %v", err)
+	if err := persist.Write(jsonBody); err != nil {
+		logrus.Errorf("communication.Broadcast(): persistence.Write() error: %v", err)
 	}
 
-	messageQueue.Add(*messageBody)
+	messageQueue.Add(*message)
 
-	messageCacheData := messageQueue.Get(channelId)
+	cachedMessages := messageQueue.Get(channelId)
 
-	if error := writeMessage(messageCacheData, channelId, consumerStorage); error != nil {
+	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 	}
 
-	return context.JSON(http.StatusOK, messageCacheData)
+	return context.JSON(http.StatusOK, cachedMessages)
 }
 
 func writeMessage(messageCacheData []channelconsumer.Message, id int, store *channelconsumer.InMemoryConsumerCache) error {

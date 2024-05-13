@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/sagini18/message-broker/consumer/internal/types"
@@ -19,7 +18,7 @@ func WriteMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 		return
 	}
 	if n > 0 {
-		fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
+		// fmt.Println("Sent message: ", string(receiver.ReceivedMessage))
 	}
 
 	receiver.ReceivedMessage = make([]byte, 0)
