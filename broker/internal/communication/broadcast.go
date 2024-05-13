@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -31,9 +30,8 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): json.Marshal error: %v", err)
 	}
 
-	time.Sleep(10 * time.Second)
 	if err := persist.Write(jsonBody); err != nil {
-		logrus.Errorf("communication.Broadcast(): persistence.AppendToFile error: %v", err)
+		logrus.Errorf("communication.Broadcast(): persistence.Write() error: %v", err)
 	}
 
 	messageQueue.Add(*message)

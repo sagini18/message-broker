@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
+	"sync"
 
+	"github.com/gofrs/flock"
+	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sirupsen/logrus"
 )
@@ -14,24 +16,41 @@ import (
 type Persistence interface {
 	Write(data []byte) error
 	Read(channelId int) ([]channelconsumer.Message, error)
-	CleanUp(messageId int, channelId int) error
+	Remove(messageId int) error
 }
 
 type persistence struct {
+	filePath string
+	lock     *flock.Flock
+	mu       sync.Mutex
 }
 
 func New() Persistence {
-	return &persistence{}
+	config, err := config.LoadConfig()
+	if err != nil {
+		config.FilePath = "./internal/persistence/persisted_messages.txt"
+	}
+	return &persistence{
+		filePath: config.FilePath,
+		lock:     flock.New(config.FilePath),
+	}
 }
 
 func (p *persistence) Write(data []byte) error {
-	filePath := "./internal/persistence/persisted_messages.txt"
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	file, err := os.OpenFile(p.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Error("Error in opening file: ", err)
 		return err
 	}
 	defer file.Close()
+
+	// if err := p.lock.Lock(); err != nil {
+	// 	return fmt.Errorf("error in acquiring lock persistence.Write(): %v", err)
+	// }
+	// defer p.lock.Unlock()
 
 	if _, err := file.Write(data); err != nil {
 		logrus.Error("Error in writing to file: ", err)
@@ -46,13 +65,19 @@ func (p *persistence) Write(data []byte) error {
 }
 
 func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
-	filePath := "./internal/persistence/persisted_messages.txt"
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	// if err := p.lock.RLock(); err != nil {
+	// 	return nil, fmt.Errorf("error in acquiring lock persistence.Read(): %v", err)
+	// }
+	// defer p.lock.Unlock()
+
+	if _, err := os.Stat(p.filePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("file does not exist: %v", err)
 	}
 
-	file, err := os.Open(filePath)
+	file, err := os.OpenFile(p.filePath, os.O_RDONLY, 0644)
 	if err != nil {
 		logrus.Error("Error in opening file: ", err)
 		return nil, err
@@ -80,26 +105,19 @@ func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
 
 	return messages, nil
 }
+func (p *persistence) Remove(messageId int) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-func (p *persistence) CleanUp(messageId int, channelId int) error {
-	filePath := "./internal/persistence/persisted_messages.txt"
+	tempFilePath := p.filePath + ".temp"
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return fmt.Errorf("file does not exist: %v", err)
-	}
-
-	inputFile, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+	inputFile, err := os.Open(p.filePath)
 	if err != nil {
-		// if err.Error() == "open "+filePath+": The process cannot access the file because it is being used by another process." {
-		// 	time.Sleep(10 * time.Second)
-		// 	inputFile, err = os.OpenFile(filePath, os.O_RDONLY, 0644)
-		// }
 		return fmt.Errorf("error opening input file: %v", err)
 	}
 	defer inputFile.Close()
 
-	tempFilePath := filePath + ".temp"
-	tempFile, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	tempFile, err := os.Create(tempFilePath)
 	if err != nil {
 		return fmt.Errorf("error creating temporary output file: %v", err)
 	}
@@ -114,13 +132,10 @@ func (p *persistence) CleanUp(messageId int, channelId int) error {
 		if err := decoder.Decode(&m); err != nil {
 			return fmt.Errorf("error decoding JSON: %v", err)
 		}
-
-		if m.ChannelId == channelId && m.ID == messageId {
-			continue
-		}
-
-		if err := encoder.Encode(m); err != nil {
-			return fmt.Errorf("error encoding JSON: %v", err)
+		if m.ID != messageId {
+			if err := encoder.Encode(m); err != nil {
+				return fmt.Errorf("error encoding JSON: %v", err)
+			}
 		}
 	}
 
@@ -129,17 +144,12 @@ func (p *persistence) CleanUp(messageId int, channelId int) error {
 	}
 
 	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("error closing temporary output file: %v", err)
+		return fmt.Errorf("error closing temporary file: %v", err)
 	}
 
-	if err := os.Rename(tempFilePath, filePath); err != nil {
-		if err.Error() == "rename "+tempFilePath+" "+filePath+": Access is denied." {
-			time.Sleep(10 * time.Second)
-			if err := os.Rename(tempFilePath, filePath); err == nil {
-				return nil
-			}
-		}
+	if err := os.Rename(tempFilePath, p.filePath); err != nil {
 		return fmt.Errorf("error renaming temporary file: %v", err)
 	}
+
 	return nil
 }

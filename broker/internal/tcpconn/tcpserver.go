@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
@@ -100,7 +99,6 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 }
 
 func sendPersistedData(channel int, connection net.Conn, persist persistence.Persistence) int {
-	time.Sleep(10 * time.Second)
 	fileData, err := persist.Read(channel)
 	if err != nil {
 		logrus.Errorf("tcpserver.Listen(): persistence.Read() failed: %v", err)
