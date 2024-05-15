@@ -36,7 +36,7 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 	} else {
 		mc.messages[message.ChannelId] = []Message{message}
 	}
-	logrus.Info("MessageCache after Added: ", mc.messages)
+	logrus.Info("Added message to cache: ", message.Content)
 }
 
 func (mc *InMemoryMessageCache) Remove(id int, channelId int) {

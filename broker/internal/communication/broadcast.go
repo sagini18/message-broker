@@ -15,7 +15,6 @@ import (
 )
 
 func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence) error {
-
 	channelId, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
