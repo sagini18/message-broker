@@ -40,6 +40,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
+		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}
 
 	return context.JSON(http.StatusOK, cachedMessages)
