@@ -15,7 +15,6 @@ import (
 )
 
 func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence) error {
-
 	channelId, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
@@ -40,6 +39,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil {
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
+		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}
 
 	return context.JSON(http.StatusOK, cachedMessages)

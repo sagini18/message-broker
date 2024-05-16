@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -94,7 +93,93 @@ func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
 	return messages, nil
 }
 
-func (p *persistence) Remove(messageId int) error {
+// func (p *persistence) Remove(messageId int) error {
+// 	p.mu.Lock()
+// 	defer p.mu.Unlock()
+
+// 	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
+// 	if err != nil {
+// 		return fmt.Errorf("error opening file for read/write: %v", err)
+// 	}
+// 	defer file.Close()
+
+// 	var filteredData []byte
+
+// 	scanner := bufio.NewScanner(file)
+// 	for scanner.Scan() {
+// 		var msg channelconsumer.Message
+// 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
+// 			return fmt.Errorf("error decoding JSON: %v", err)
+// 		}
+// 		if msg.ID != messageId {
+// 			filteredData = append(filteredData, scanner.Bytes()...)
+// 			filteredData = append(filteredData, '\n')
+// 		}
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		return fmt.Errorf("error scanning file: %v", err)
+// 	}
+
+// 	if err := file.Truncate(0); err != nil {
+// 		return fmt.Errorf("error truncating file: %v", err)
+// 	}
+
+// 	if _, err := file.Seek(0, 0); err != nil {
+// 		return fmt.Errorf("error seeking to file beginning: %v", err)
+// 	}
+
+// 	if _, err := file.Write(filteredData); err != nil {
+// 		return fmt.Errorf("error writing filtered data: %v", err)
+// 	}
+
+// 	return nil
+// }
+
+// func (p *persistence) Remove(messageId int) error {
+// 	p.mu.Lock()
+// 	defer p.mu.Unlock()
+
+// 	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
+// 	if err != nil {
+// 		return fmt.Errorf("error opening file for read/write: %v", err)
+// 	}
+// 	defer file.Close()
+
+// 	var filteredData []byte
+
+// 	scanner := bufio.NewScanner(file)
+// 	for scanner.Scan() {
+// 		var msg channelconsumer.Message
+// 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
+// 			return fmt.Errorf("error decoding JSON: %v", err)
+// 		}
+// 		if msg.ID != messageId {
+// 			filteredData = append(filteredData, scanner.Bytes()...)
+// 			filteredData = append(filteredData, '\n')
+// 		}
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		return fmt.Errorf("error scanning file: %v", err)
+// 	}
+
+// 	if err := file.Truncate(0); err != nil {
+// 		return fmt.Errorf("error truncating file: %v", err)
+// 	}
+
+// 	if _, err := file.Seek(0, 0); err != nil {
+// 		return fmt.Errorf("error seeking to file beginning: %v", err)
+// 	}
+
+// 	if _, err := file.Write(filteredData); err != nil {
+// 		return fmt.Errorf("error writing filtered data: %v", err)
+// 	}
+
+// 	return nil
+// }
+
+func (p *persistence) Remove(messageID int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -104,22 +189,25 @@ func (p *persistence) Remove(messageId int) error {
 	}
 	defer file.Close()
 
-	var filteredData []byte
+	var modifiedContent []channelconsumer.Message
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
+	decoder := json.NewDecoder(file)
+
+	for {
 		var msg channelconsumer.Message
-		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
+
+		if err := decoder.Decode(&msg); err != nil {
+			if err == io.EOF {
+				break
+			}
 			return fmt.Errorf("error decoding JSON: %v", err)
 		}
-		if msg.ID != messageId {
-			filteredData = append(filteredData, scanner.Bytes()...)
-			filteredData = append(filteredData, '\n')
-		}
-	}
 
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error scanning file: %v", err)
+		if msg.ID == messageID {
+			continue
+		}
+
+		modifiedContent = append(modifiedContent, msg)
 	}
 
 	if err := file.Truncate(0); err != nil {
@@ -130,8 +218,12 @@ func (p *persistence) Remove(messageId int) error {
 		return fmt.Errorf("error seeking to file beginning: %v", err)
 	}
 
-	if _, err := file.Write(filteredData); err != nil {
-		return fmt.Errorf("error writing filtered data: %v", err)
+	encoder := json.NewEncoder(file)
+
+	for _, msg := range modifiedContent {
+		if err := encoder.Encode(msg); err != nil {
+			return fmt.Errorf("error encoding JSON: %v", err)
+		}
 	}
 
 	return nil

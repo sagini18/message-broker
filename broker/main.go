@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/labstack/echo/v4"
@@ -13,6 +15,10 @@ import (
 
 func main() {
 	configureLogger()
+
+	go func() {
+		logrus.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
