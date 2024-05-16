@@ -93,99 +93,13 @@ func (p *persistence) Read(channelId int) ([]channelconsumer.Message, error) {
 	return messages, nil
 }
 
-// func (p *persistence) Remove(messageId int) error {
-// 	p.mu.Lock()
-// 	defer p.mu.Unlock()
-
-// 	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
-// 	if err != nil {
-// 		return fmt.Errorf("error opening file for read/write: %v", err)
-// 	}
-// 	defer file.Close()
-
-// 	var filteredData []byte
-
-// 	scanner := bufio.NewScanner(file)
-// 	for scanner.Scan() {
-// 		var msg channelconsumer.Message
-// 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
-// 			return fmt.Errorf("error decoding JSON: %v", err)
-// 		}
-// 		if msg.ID != messageId {
-// 			filteredData = append(filteredData, scanner.Bytes()...)
-// 			filteredData = append(filteredData, '\n')
-// 		}
-// 	}
-
-// 	if err := scanner.Err(); err != nil {
-// 		return fmt.Errorf("error scanning file: %v", err)
-// 	}
-
-// 	if err := file.Truncate(0); err != nil {
-// 		return fmt.Errorf("error truncating file: %v", err)
-// 	}
-
-// 	if _, err := file.Seek(0, 0); err != nil {
-// 		return fmt.Errorf("error seeking to file beginning: %v", err)
-// 	}
-
-// 	if _, err := file.Write(filteredData); err != nil {
-// 		return fmt.Errorf("error writing filtered data: %v", err)
-// 	}
-
-// 	return nil
-// }
-
-// func (p *persistence) Remove(messageId int) error {
-// 	p.mu.Lock()
-// 	defer p.mu.Unlock()
-
-// 	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
-// 	if err != nil {
-// 		return fmt.Errorf("error opening file for read/write: %v", err)
-// 	}
-// 	defer file.Close()
-
-// 	var filteredData []byte
-
-// 	scanner := bufio.NewScanner(file)
-// 	for scanner.Scan() {
-// 		var msg channelconsumer.Message
-// 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
-// 			return fmt.Errorf("error decoding JSON: %v", err)
-// 		}
-// 		if msg.ID != messageId {
-// 			filteredData = append(filteredData, scanner.Bytes()...)
-// 			filteredData = append(filteredData, '\n')
-// 		}
-// 	}
-
-// 	if err := scanner.Err(); err != nil {
-// 		return fmt.Errorf("error scanning file: %v", err)
-// 	}
-
-// 	if err := file.Truncate(0); err != nil {
-// 		return fmt.Errorf("error truncating file: %v", err)
-// 	}
-
-// 	if _, err := file.Seek(0, 0); err != nil {
-// 		return fmt.Errorf("error seeking to file beginning: %v", err)
-// 	}
-
-// 	if _, err := file.Write(filteredData); err != nil {
-// 		return fmt.Errorf("error writing filtered data: %v", err)
-// 	}
-
-// 	return nil
-// }
-
 func (p *persistence) Remove(messageID int) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	file, err := os.OpenFile(p.filePath, os.O_RDWR, 0644)
 	if err != nil {
-		return fmt.Errorf("error opening file for read/write: %v", err)
+		return fmt.Errorf("persist.Remove() : error opening file : %v", err)
 	}
 	defer file.Close()
 
@@ -200,7 +114,7 @@ func (p *persistence) Remove(messageID int) error {
 			if err == io.EOF {
 				break
 			}
-			return fmt.Errorf("error decoding JSON: %v", err)
+			return fmt.Errorf("persist.Remove() : error decoding JSON: %v", err)
 		}
 
 		if msg.ID == messageID {
@@ -211,11 +125,11 @@ func (p *persistence) Remove(messageID int) error {
 	}
 
 	if err := file.Truncate(0); err != nil {
-		return fmt.Errorf("error truncating file: %v", err)
+		return fmt.Errorf("persist.Remove() : error truncating file: %v", err)
 	}
 
 	if _, err := file.Seek(0, 0); err != nil {
-		return fmt.Errorf("error seeking to file beginning: %v", err)
+		return fmt.Errorf("persist.Remove() : error seeking to file beginning: %v", err)
 	}
 
 	encoder := json.NewEncoder(file)
