@@ -51,7 +51,7 @@ export default function GraphCard({ count, name, color }) {
           )}
         </Card>
       </Paper>
-      <CardModel open={open} handleClose={() => setOpen(false)} name={name} />
+      <CardModel open={open} handleClose={() => setOpen(false)} name={name} color={color} />
     </>
   );
 }

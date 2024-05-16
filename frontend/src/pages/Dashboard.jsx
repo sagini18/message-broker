@@ -2,7 +2,7 @@ import React from "react";
 import NavBar from "../components/NavBar";
 import DataTable from "../components/Table";
 import BasicLineChart from "../components/Chart";
-import { Box, Stack } from "@mui/material";
+import { Box } from "@mui/material";
 import GraphCard from "../components/Card";
 
 export default function Dashboard() {
@@ -10,8 +10,8 @@ export default function Dashboard() {
     <div>
       <NavBar/>
       <Box display={"flex"} >
-        <BasicLineChart />
-        <BasicLineChart />
+        <BasicLineChart color={"blue"} name="No of requests"/>
+        <BasicLineChart color={"blue"} name="No of messages"/>
       </Box>
       <Box display={"flex"} paddingInline={2} justifyContent={"space-between"}>
       <DataTable />
