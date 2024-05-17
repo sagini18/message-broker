@@ -38,8 +38,8 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	cachedMessages := messageQueue.Get(channelId)
 
-	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil { // run it in a background thread
-		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
+	if err := writeMessage(cachedMessages, channelId, consumerStorage); err != nil { // run it in a background thread
+		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", err)
 		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}
 
