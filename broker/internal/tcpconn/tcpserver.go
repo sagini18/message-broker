@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -18,9 +19,10 @@ type TCPServer struct {
 	consumerIdGenerator channelconsumer.IdGenerator
 	messageIdGenerator  channelconsumer.IdGenerator
 	persist             persistence.Persistence
+	file                *os.File
 }
 
-func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence) *TCPServer {
+func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence, file *os.File) *TCPServer {
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
@@ -28,6 +30,7 @@ func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.Me
 		consumerIdGenerator: consumerIdGenerator,
 		messageIdGenerator:  messageIdGenerator,
 		persist:             persist,
+		file:                file,
 	}
 }
 
@@ -52,12 +55,12 @@ func (t *TCPServer) Listen() error {
 				return
 			}
 
-			count := sendPersistedData(channel, conn, t.persist)
+			count := sendPersistedData(channel, conn, t.persist, t.file)
 			if count == 0 {
 				t.messageQueue.SendPendingMessages(channel, conn)
 			}
 
-			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist); err != nil {
+			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist, t.file); err != nil {
 				logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
 			}
 		}()
@@ -98,8 +101,8 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 	return channelInt, consumer, nil
 }
 
-func sendPersistedData(channel int, connection net.Conn, persist persistence.Persistence) int {
-	fileData, err := persist.Read(channel)
+func sendPersistedData(channel int, connection net.Conn, persist persistence.Persistence, file *os.File) int {
+	fileData, err := persist.Read(channel, file)
 	if err != nil {
 		logrus.Errorf("tcpserver.Listen(): persistence.Read() failed: %v", err)
 	}

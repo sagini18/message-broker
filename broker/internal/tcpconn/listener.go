@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
@@ -12,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence, file *os.File) error {
 	defer connection.Close()
 
 	for {
@@ -48,7 +49,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		for _, msg := range msgs {
 			logrus.Info("Message received as ack: ", msg)
 
-			if err := persist.Remove(msg.ID); err != nil {
+			if err := persist.Remove(msg.ID, file); err != nil {
 				logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
 			}
 

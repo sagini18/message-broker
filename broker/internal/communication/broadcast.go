@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File) error {
 	channelId, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
 		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
@@ -29,7 +30,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 		return fmt.Errorf("communication.Broadcast(): json.Marshal error: %v", err)
 	}
 
-	if err := persist.Write(jsonBody); err != nil {
+	if err := persist.Write(jsonBody, file); err != nil {
 		logrus.Errorf("communication.Broadcast(): persistence.Write() error: %v", err)
 	}
 
@@ -37,7 +38,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	cachedMessages := messageQueue.Get(channelId)
 
-	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil {
+	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil { // run it in a background thread
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}

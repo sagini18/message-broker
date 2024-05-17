@@ -6,7 +6,7 @@ import (
 
 type Message struct {
 	ID        int
-	ChannelId int
+	ChannelId int //need to change into string
 	Content   interface{}
 }
 

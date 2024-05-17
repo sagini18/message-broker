@@ -30,7 +30,7 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 
 	cc.consumers[consumer.Id] = *consumer
 
-	logrus.Info("ConsumerCache after Added: ", cc.consumers)
+	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
 func (cc *InMemoryConsumerCache) Remove(consumerId int) {
@@ -38,7 +38,7 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 	defer cc.mu.Unlock()
 
 	delete(cc.consumers, consumerId)
-	logrus.Info("ConsumerCache after Removed: ", cc.consumers)
+	logrus.Info("Removed consumerID from cache: ", consumerId)
 }
 
 func (cc *InMemoryConsumerCache) GetAll() map[int]Consumer {
