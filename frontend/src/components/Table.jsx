@@ -150,8 +150,9 @@ const rows = [
 export default function DataTable() {
   return (
     <Box
+    pt={1}
       sx={{
-        height: "50vh",
+        height: "47.8vh",
         width: "55vw",
       }}>
       <DataGrid
@@ -159,7 +160,7 @@ export default function DataTable() {
         columns={columns}
         initialState={{
           pagination: {
-            paginationModel: { page: 0, pageSize: 4 },
+            paginationModel: { page: 0, pageSize: 5},
           },
         }}
         pageSizeOptions={[5, 10]}
