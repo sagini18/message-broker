@@ -2,11 +2,14 @@ package tcpconn
 
 import (
 	"net"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,7 +55,17 @@ func TestHandleNewClientConnection(t *testing.T) {
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	mockPersist := persistence.New()
 
-	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist)
+	config, err := config.LoadConfig()
+	if err != nil {
+		config.FilePath = "./internal/persistence/persisted_messages.txt"
+	}
+	file, err := os.OpenFile(config.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Error("Error in opening file: ", err)
+	}
+	defer file.Close()
+
+	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist, file)
 
 	mockConn := &MockConn{}
 

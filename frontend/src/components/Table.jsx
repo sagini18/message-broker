@@ -20,7 +20,7 @@ const columns = [
   },
   {
     field: "channelName",
-    type: "number",
+    type: "number", //need to change to string
     width: 130,
     renderHeader: () => (
         <strong>
