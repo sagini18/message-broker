@@ -51,7 +51,7 @@ func (t *TCPServer) Listen() error {
 		go func() {
 			channel, consumer, err := t.handleNewClientConnection(conn)
 			if err != nil {
-				logrus.Errorf("tcpserver.Listen(): handleNewClientConnection failed to %v: %v", conn.RemoteAddr().String(), err)
+				logrus.Errorf("tcpserver.Listen(): %v", err)
 				return
 			}
 
@@ -61,7 +61,7 @@ func (t *TCPServer) Listen() error {
 			}
 
 			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist, t.file); err != nil {
-				logrus.Errorf("tcpserver.Listen(): listenToConsumerMessages failed to %v: %v", conn.RemoteAddr().String(), err)
+				logrus.Errorf("tcpserver.Listen():  %v", err)
 			}
 		}()
 	}
@@ -72,13 +72,13 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 
 	n, err := connection.Read(channelBuf)
 	if err != nil {
-		return 0, nil, fmt.Errorf("handleNewClientConnection: reading error from tcp conn: %v", err)
+		return 0, nil, fmt.Errorf("handleNewClientConnection(): reading error from tcp conn: %v", err)
 	}
 
 	channel := string(channelBuf[:n])
 	channelInt, err := strconv.Atoi(channel)
 	if err != nil {
-		return 0, nil, fmt.Errorf("handleNewClientConnection: converting channel into int error: %v", err)
+		return 0, nil, fmt.Errorf("handleNewClientConnection(): converting channel into int error: %v", err)
 	}
 
 	newId := t.consumerIdGenerator.NewId()
@@ -91,11 +91,11 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 
 	confirmationBytes, err := json.Marshal(channelConfirmation)
 	if err != nil {
-		return 0, nil, fmt.Errorf("handleNewClientConnection: marshaling error: %v", err)
+		return 0, nil, fmt.Errorf("handleNewClientConnection(): marshaling error: %v", err)
 	}
 
 	if _, err = connection.Write(confirmationBytes); err != nil {
-		return 0, nil, fmt.Errorf("handleNewClientConnection: writing error: %v", err)
+		return 0, nil, fmt.Errorf("handleNewClientConnection(): writing error: %v", err)
 	}
 
 	return channelInt, consumer, nil
@@ -104,7 +104,7 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (int, *channe
 func sendPersistedData(channel int, connection net.Conn, persist persistence.Persistence, file *os.File) int {
 	fileData, err := persist.Read(channel, file)
 	if err != nil {
-		logrus.Errorf("tcpserver.Listen(): persistence.Read() failed: %v", err)
+		logrus.Errorf("tcpserver.Listen().sendPersistedData(): %v", err)
 	}
 
 	if len(fileData) == 0 {
@@ -113,12 +113,12 @@ func sendPersistedData(channel int, connection net.Conn, persist persistence.Per
 
 	messageBytes, err := json.Marshal(fileData)
 	if err != nil {
-		logrus.Errorf("sendPersistedData(): json.Marshal error: %v", err)
+		logrus.Errorf("tcpserver.Listen().sendPersistedData(): json.Marshal error: %v", err)
 
 	}
 
 	if _, err = connection.Write(messageBytes); err != nil {
-		logrus.Errorf("sendPersistedData(): writing error: %v", err)
+		logrus.Errorf("tcpserver.Listen().sendPersistedData(): writing error: %v", err)
 	}
 	logrus.Info("Sent persisted data to consumer: ", fileData)
 	return len(fileData)

@@ -74,12 +74,12 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelId int, connection ne
 	if messages, found := messagesCopy[channelId]; found {
 		messageBytes, err := json.Marshal(messages)
 		if err != nil {
-			logrus.Error("SendPendingMessages() Error while marshalling message: ", err)
+			logrus.Error("channelconsumer.SendPendingMessages() Error while marshalling message: ", err)
 			return
 		}
 
 		if _, err = connection.Write(messageBytes); err != nil {
-			logrus.Error("SendPendingMessages() Error while writing previous messages to consumer: ", err)
+			logrus.Error("channelconsumer.SendPendingMessages() Error while writing previous messages to consumer: ", err)
 			return
 		}
 	}

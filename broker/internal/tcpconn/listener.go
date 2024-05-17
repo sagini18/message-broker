@@ -19,7 +19,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 	for {
 		buffer, totalBytesRead, err := readMessages(connection, store, consumer)
 		if err != nil {
-			return fmt.Errorf("tcpconn.listenToConsumerMessages(): connection.Read error: %v", err)
+			return fmt.Errorf("listenToConsumerMessages(): connection.Read error: %v", err)
 		}
 
 		if totalBytesRead <= 0 {
@@ -41,7 +41,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 			trimedChunk = append(trimedChunk, ']')
 
 			if err := json.Unmarshal(trimedChunk, &msgs); err != nil {
-				logrus.Errorf("tcpconn.listenToConsumerMessages(): json.Unmarshal error: %v", err)
+				logrus.Errorf("listenToConsumerMessages(): json.Unmarshal error: %v", err)
 				continue
 			}
 		}
@@ -50,7 +50,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 			logrus.Info("Message received as ack: ", msg)
 
 			if err := persist.Remove(msg.ID, file); err != nil {
-				logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
+				logrus.Errorf("listenToConsumerMessages(): %v", err)
 			}
 
 			messageQueue.Remove(msg.ID, msg.ChannelId)

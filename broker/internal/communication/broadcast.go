@@ -31,7 +31,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	}
 
 	if err := persist.Write(jsonBody, file); err != nil {
-		logrus.Errorf("communication.Broadcast(): persistence.Write() error: %v", err)
+		logrus.Errorf("communication.Broadcast(): %v", err)
 	}
 
 	messageQueue.Add(*message)
@@ -39,7 +39,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	cachedMessages := messageQueue.Get(channelId)
 
 	if err := writeMessage(cachedMessages, channelId, consumerStorage); err != nil { // run it in a background thread
-		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", err)
+		logrus.Errorf("communication.Broadcast(): %v", err)
 		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}
 
@@ -56,7 +56,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 
 		messageBytes, err := json.Marshal(messageCacheData)
 		if err != nil {
-			logrus.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
+			logrus.Errorf("writeMessage(): json.Marshal error: %v", err)
 			continue
 		}
 
