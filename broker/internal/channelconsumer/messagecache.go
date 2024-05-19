@@ -13,6 +13,7 @@ type MessageStorage interface {
 	Remove(id int, channelId int)
 	Get(channelId int) []Message
 	SendPendingMessages(channelId int, connection net.Conn)
+	GetAll() map[int][]Message
 }
 
 type InMemoryMessageCache struct {
@@ -90,4 +91,11 @@ func (mc *InMemoryMessageCache) Get(channelId int) []Message {
 	defer mc.mu.Unlock()
 
 	return mc.messages[channelId]
+}
+
+func (mc *InMemoryMessageCache) GetAll() map[int][]Message {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
+	return mc.messages
 }

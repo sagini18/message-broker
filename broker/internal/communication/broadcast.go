@@ -15,6 +15,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+/*
+* Broadcast handles the broadcasting of messages to consumers on a specific channel.
+* It is responsible for processing the incoming HTTP request, creating a new message,
+* persisting it, adding it to the message queue, and then sending it to all relevant consumers.
+*
+* Parameters:
+*   - context (echo.Context): The Echo context containing the HTTP request and response.
+*   - messageQueue (*channelconsumer.InMemoryMessageQueue): The in-memory queue where messages are stored before being sent to consumers.
+*   - consumerStorage (*channelconsumer.InMemoryConsumerCache): The in-memory cache of active consumers that are listening for messages.
+*   - messageIdGenerator (*channelconsumer.SerialMessageIdGenerator): The generator for creating unique message IDs.
+*   - persist (persistence.Persistence): The persistence layer responsible for saving messages to a file.
+*   - file (*os.File): The file where messages are persisted.
+*
+* Returns:
+*   - error: Returns an error if there is any issue during the process, otherwise returns nil.
+ */
+
 func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File) error {
 	channelId, err := strconv.Atoi(context.Param("id"))
 	if err != nil {

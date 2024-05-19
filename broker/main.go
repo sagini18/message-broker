@@ -11,6 +11,7 @@ import (
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
+	"github.com/sagini18/message-broker/broker/services/channel"
 	"github.com/sirupsen/logrus"
 )
 
@@ -48,6 +49,11 @@ func main() {
 	app.POST("/api/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file)
 	})
+
+	app.GET("/api/channel_details", func(c echo.Context) error {
+		return channel.ChannelDetails(c, messageQueue, consumerStorage)
+	})
+
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)
 	}
