@@ -2,6 +2,8 @@ package channelconsumer
 
 import (
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Storage interface {
@@ -34,7 +36,7 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
 	}
 
-	// logrus.Info("Added consumer from cache: ", *consumer)
+	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
 func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
@@ -52,7 +54,7 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 			updatedConsumers = append(updatedConsumers, consumer)
 			continue
 		}
-		// logrus.Info("Removed consumerID from cache: ", consumerId)
+		logrus.Info("Removed consumerID from cache: ", consumerId)
 	}
 	cc.consumers[channelName] = updatedConsumers
 	if len(updatedConsumers) == 0 {
