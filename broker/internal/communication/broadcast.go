@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -33,13 +31,10 @@ import (
  */
 
 func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File) error {
-	channelId, err := strconv.Atoi(context.Param("id"))
-	if err != nil {
-		return fmt.Errorf("communication.Broadcast(): strconv.Atoi error: %v", err)
-	}
+	channelName := context.Param("id")
 
 	messageId := messageIdGenerator.NewId()
-	message := channelconsumer.NewMessage(messageId, channelId, nil)
+	message := channelconsumer.NewMessage(messageId, channelName, nil)
 	context.Bind(message)
 
 	jsonBody, err := json.Marshal(message)
@@ -53,9 +48,9 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 
 	messageQueue.Add(*message)
 
-	cachedMessages := messageQueue.Get(channelId)
+	cachedMessages := messageQueue.Get(channelName)
 
-	if error := writeMessage(cachedMessages, channelId, consumerStorage); error != nil { // run it in a background thread
+	if error := writeMessage(cachedMessages, channelName, consumerStorage); error != nil { // run it in a background thread
 		logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 		return context.JSON(http.StatusInternalServerError, "Failed to broadcast message")
 	}
@@ -63,14 +58,14 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	return context.JSON(http.StatusOK, cachedMessages)
 }
 
-func writeMessage(messageCacheData []channelconsumer.Message, id int, store *channelconsumer.InMemoryConsumerCache) error {
-	allConsumers := store.GetAll()
+func writeMessage(messageCacheData []channelconsumer.Message, channelName string, store *channelconsumer.InMemoryConsumerCache) error {
+	consumers := store.GetByChannel(channelName)
 
-	for _, consumer := range allConsumers {
-		if !slices.Contains(consumer.SubscribedChannels, id) {
-			continue
-		}
+	if len(consumers) == 0 {
+		return nil
+	}
 
+	for _, consumer := range consumers {
 		messageBytes, err := json.Marshal(messageCacheData)
 		if err != nil {
 			logrus.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
@@ -79,14 +74,12 @@ func writeMessage(messageCacheData []channelconsumer.Message, id int, store *cha
 
 		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-				if c := store.Get(consumer.Id); c.TcpConn != nil {
-					store.Remove(consumer.Id)
+				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
+					store.Remove(consumer.Id, consumer.SubscribedChannel)
 				}
 				continue
 			}
-
 		}
-
 	}
 	return nil
 }

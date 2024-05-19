@@ -67,7 +67,7 @@ func TestBroadcast(t *testing.T) {
 	ConnSpy := &ConnSpy{}
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
-	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: ConnSpy})
+	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: ConnSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
@@ -88,9 +88,9 @@ func TestBroadcast(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
+	assert.Equal(t, "[{\"ID\":1,\"ChannelName\":\"123\",\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
 
-	allMessags := messageQueue.Get(123)
+	allMessags := messageQueue.Get("123")
 	assert.Equal(t, 1, len(allMessags))
 	assert.Equal(t, "Hello, World!", allMessags[0].Content)
 }
@@ -108,7 +108,7 @@ func BenchmarkBroadcast(b *testing.B) {
 	connSpy := &ConnSpy{}
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
-	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: connSpy})
+	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: connSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()

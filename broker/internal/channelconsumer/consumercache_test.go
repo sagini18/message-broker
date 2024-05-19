@@ -9,22 +9,22 @@ import (
 func TestConsumerAdd(t *testing.T) {
 	mockStorage := NewInMemoryInMemoryConsumerCache()
 	addedConsumer := &Consumer{
-		Id:                 1,
-		SubscribedChannels: []int{1},
+		Id:                1,
+		SubscribedChannel: "test",
 	}
 
 	mockStorage.Add(addedConsumer)
 
 	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
-	assert.Equal(t, *addedConsumer, consumers[1])
+	assert.Equal(t, *addedConsumer, consumers["test"][0])
 }
 
 func TestConsumerRemove(t *testing.T) {
 	mockStorage := NewInMemoryInMemoryConsumerCache()
 	mockConsumer := &Consumer{
-		Id:                 1,
-		SubscribedChannels: []int{1},
+		Id:                1,
+		SubscribedChannel: "test",
 	}
 
 	mockStorage.Add(mockConsumer)
@@ -32,7 +32,7 @@ func TestConsumerRemove(t *testing.T) {
 	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
 
-	mockStorage.Remove(1)
+	mockStorage.Remove(1, "test")
 
 	consumers = mockStorage.GetAll()
 	assert.Equal(t, 0, len(consumers))
@@ -41,26 +41,26 @@ func TestConsumerRemove(t *testing.T) {
 func TestGetConsumer(t *testing.T) {
 	mockStorage := NewInMemoryInMemoryConsumerCache()
 	mockConsumer := &Consumer{
-		Id:                 1,
-		SubscribedChannels: []int{1},
+		Id:                1,
+		SubscribedChannel: "test",
 	}
 
 	mockStorage.Add(mockConsumer)
 
-	consumer := mockStorage.Get(1)
+	var consumer Consumer = mockStorage.Get(1, "test")
 	assert.Equal(t, *mockConsumer, consumer)
 }
 
 func TestGet(t *testing.T) {
 	mockStorage := NewInMemoryInMemoryConsumerCache()
 	mockConsumer := &Consumer{
-		Id:                 1,
-		SubscribedChannels: []int{1},
+		Id:                1,
+		SubscribedChannel: "test",
 	}
 
 	mockStorage.Add(mockConsumer)
 
 	consumers := mockStorage.GetAll()
 	assert.Equal(t, 1, len(consumers))
-	assert.Equal(t, *mockConsumer, consumers[1])
+	assert.Equal(t, *mockConsumer, consumers["test"][0])
 }

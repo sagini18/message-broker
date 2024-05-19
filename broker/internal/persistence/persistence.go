@@ -12,7 +12,7 @@ import (
 
 type Persistence interface {
 	Write(data []byte, file *os.File) error
-	Read(channelId int, file *os.File) ([]channelconsumer.Message, error)
+	Read(channelId string, file *os.File) ([]channelconsumer.Message, error)
 	Remove(messageId int, file *os.File) error
 }
 
@@ -40,7 +40,7 @@ func (p *persistence) Write(data []byte, file *os.File) error {
 	return nil
 }
 
-func (p *persistence) Read(channelId int, file *os.File) ([]channelconsumer.Message, error) {
+func (p *persistence) Read(channelId string, file *os.File) ([]channelconsumer.Message, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -62,7 +62,7 @@ func (p *persistence) Read(channelId int, file *os.File) ([]channelconsumer.Mess
 			logrus.Error("persistence.Read() : Error in decoding JSON: ", err)
 			return nil, err
 		}
-		if msg.ChannelId != channelId {
+		if msg.ChannelName != channelId {
 			continue
 		}
 		messages = append(messages, msg)
