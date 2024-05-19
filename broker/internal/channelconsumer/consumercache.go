@@ -44,8 +44,12 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int) {
 func (cc *InMemoryConsumerCache) GetAll() map[int]Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
-
-	return cc.consumers
+	// Create a copy of the map to avoid holding the lock during iteration
+	consumersCopy := make(map[int]Consumer)
+	for id, consumer := range cc.consumers {
+		consumersCopy[id] = consumer
+	}
+	return consumersCopy
 }
 
 func (cc *InMemoryConsumerCache) Get(consumerId int) Consumer {
