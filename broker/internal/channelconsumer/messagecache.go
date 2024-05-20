@@ -38,7 +38,7 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 	} else {
 		mc.messages[message.ChannelName] = []Message{message}
 	}
-	logrus.Info("Added message to cache: ", message.Content)
+	// logrus.Info("Added message to cache: ", message.Content)
 }
 
 func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
@@ -56,7 +56,7 @@ func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
 			updatedMessages = append(updatedMessages, msg)
 			continue
 		}
-		logrus.Info("Removed message from cache: ", msg.Content)
+		// logrus.Info("Removed message from cache: ", msg.Content)
 	}
 	mc.messages[channelName] = updatedMessages
 	if len(updatedMessages) == 0 {
@@ -69,8 +69,8 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelName string, connecti
 	defer mc.mu.Unlock()
 
 	messagesCopy := make(map[string][]Message)
-	for k, v := range mc.messages {
-		messagesCopy[k] = append([]Message{}, v...)
+	for ChannelName, messages := range mc.messages {
+		messagesCopy[ChannelName] = append([]Message{}, messages...)
 	}
 
 	if messages, found := messagesCopy[channelName]; found {
@@ -91,14 +91,20 @@ func (mc *InMemoryMessageCache) Get(channelName string) []Message {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
 
-	return mc.messages[channelName]
+	messagesCopy := append([]Message{}, mc.messages[channelName]...)
+	return messagesCopy
 }
 
 func (mc *InMemoryMessageCache) GetAll() map[string][]Message {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
 
-	return mc.messages
+	cacheMessagesCopy := make(map[string][]Message)
+	for ChannelName, messages := range mc.messages {
+		cacheMessagesCopy[ChannelName] = append([]Message{}, messages...)
+	}
+	return cacheMessagesCopy
+
 }
 
 func (mc *InMemoryMessageCache) GetCount(channelName string) int {

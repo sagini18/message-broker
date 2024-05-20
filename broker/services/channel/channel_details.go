@@ -10,16 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-/*
-@Response
-id: 9,
-channelName: 76,
-noOfMessagesInQueue: 12,
-noOfConsumers: 65,
-noOfProdcuers: 5,
-nofMessagesInPersistence:3,
-failedMessages: 1,
-*/
 func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, producerCount *channelconsumer.ProducerCounter, failMsgCount *channelconsumer.FailMsgCounter) error {
 	messages := messageQueue.GetAll()
 	consumers := consumerStorage.GetAll()
@@ -27,8 +17,9 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 	if err != nil {
 		logrus.Error("ChannelDetails(): error reading from persistence file: ", err)
 	}
+	failedChannels := failMsgCount.GetAllChannel()
 
-	if len(messages) == 0 && len(consumers) == 0 && len(persistMessages) == 0 { //need to check producer count, failed messages count
+	if len(messages) == 0 && len(consumers) == 0 && len(persistMessages) == 0 && len(failedChannels) == 0 {
 		return c.JSON(http.StatusNoContent, "No data available")
 	}
 
@@ -36,16 +27,27 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 		messages = persistMessages
 	}
 
-	var response []map[string]interface{}
-	var channelInfo map[string]interface{}
-	for channelName := range messages { //need to check consumers  //it is only printing when there is no consumers for this channel
-		channelInfo = make(map[string]interface{})
-		channelInfo["channelName"] = channelName
-		channelInfo["noOfMessagesInQueue"] = messageQueue.GetCount(channelName)
-		channelInfo["noOfConsumers"] = len(consumers[channelName])
-		channelInfo["noOfProdcuers"] = producerCount.Get(channelName)
-		channelInfo["nofMessagesInPersistence"] = persist.ReadCount(channelName, file)
-		channelInfo["failedMessages"] = failMsgCount.Get(channelName)
+	channelSet := make(map[string]struct{})
+	for channelName := range messages {
+		channelSet[channelName] = struct{}{}
+	}
+	for channelName := range consumers {
+		channelSet[channelName] = struct{}{}
+	}
+	for _, channelName := range failedChannels {
+		channelSet[channelName] = struct{}{}
+	}
+
+	response := make([]map[string]interface{}, 0, len(channelSet))
+	for channelName := range channelSet {
+		channelInfo := map[string]interface{}{
+			"channelName":               channelName,
+			"noOfMessagesInQueue":       messageQueue.GetCount(channelName),
+			"noOfConsumers":             len(consumers[channelName]),
+			"noOfProducers":             producerCount.Get(channelName),
+			"noOfMessagesInPersistence": persist.ReadCount(channelName, file),
+			"failedMessages":            failMsgCount.Get(channelName),
+		}
 		response = append(response, channelInfo)
 	}
 	return c.JSON(http.StatusOK, response)

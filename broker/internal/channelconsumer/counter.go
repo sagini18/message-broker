@@ -67,3 +67,13 @@ func (f *FailMsgCounter) Get(channelName string) int {
 	}
 	return 0
 }
+
+func (f *FailMsgCounter) GetAllChannel() []string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	var channels []string
+	for channel := range f.count {
+		channels = append(channels, channel)
+	}
+	return channels
+}

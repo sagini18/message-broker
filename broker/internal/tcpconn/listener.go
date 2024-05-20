@@ -47,7 +47,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			logrus.Info("Message received as ack: ", msg)
+			// logrus.Info("Message received as ack: ", msg)
 
 			go func() {
 				if err := persist.Remove(msg.ID, file); err != nil {

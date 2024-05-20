@@ -66,7 +66,11 @@ func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 
-	return cc.consumers
+	consumerCacheCopy := make(map[string][]Consumer)
+	for channelName, consumer := range cc.consumers {
+		consumerCacheCopy[channelName] = append([]Consumer(nil), consumer...)
+	}
+	return consumerCacheCopy
 }
 
 func (cc *InMemoryConsumerCache) Get(consumerId int, channelName string) Consumer {
@@ -90,5 +94,9 @@ func (cc *InMemoryConsumerCache) GetByChannel(channelName string) []Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 
-	return cc.consumers[channelName]
+	consumers, found := cc.consumers[channelName]
+	if !found {
+		return nil
+	}
+	return append([]Consumer(nil), consumers...)
 }

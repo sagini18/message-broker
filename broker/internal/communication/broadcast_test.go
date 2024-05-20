@@ -114,9 +114,8 @@ func BenchmarkBroadcast(b *testing.B) {
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
-	producerCount := &channelconsumer.ProducerCounter{}
-	failMsgCount := &channelconsumer.FailMsgCounter{}
-
+	producerCount := channelconsumer.NewProducerCounter()
+	failMsgCount := channelconsumer.NewFailMsgCounter()
 	config, err := config.LoadConfig()
 	if err != nil {
 		config.FilePath = "./internal/persistence/persisted_messages.txt"
