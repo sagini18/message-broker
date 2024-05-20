@@ -30,8 +30,9 @@ import (
 *   - error: Returns an error if there is any issue during the process, otherwise returns nil.
  */
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, producerCount *channelconsumer.ProducerCounter, failMsgCounter *channelconsumer.FailMsgCounter) error {
 	channelName := context.Param("id")
+	producerCount.Add(channelName)
 
 	messageId := messageIdGenerator.NewId()
 	message := channelconsumer.NewMessage(messageId, channelName, nil)
@@ -52,7 +53,8 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	cachedMessages := messageQueue.Get(channelName)
 
 	go func() {
-		if error := writeMessage(cachedMessages, channelName, consumerStorage); error != nil { // run it in a background thread
+		if error := writeMessage(cachedMessages, channelName, consumerStorage); error != nil {
+			failMsgCounter.Add(channelName)
 			logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 		}
 	}()

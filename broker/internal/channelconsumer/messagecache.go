@@ -14,6 +14,7 @@ type MessageStorage interface {
 	Get(channelName string) []Message
 	SendPendingMessages(channelName string, connection net.Conn)
 	GetAll() map[string][]Message
+	GetCount(channelName string) int
 }
 
 type InMemoryMessageCache struct {
@@ -98,4 +99,11 @@ func (mc *InMemoryMessageCache) GetAll() map[string][]Message {
 	defer mc.mu.RUnlock()
 
 	return mc.messages
+}
+
+func (mc *InMemoryMessageCache) GetCount(channelName string) int {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	return len(mc.messages[channelName])
 }

@@ -37,6 +37,8 @@ func main() {
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	persist := persistence.New()
+	producerCount := channelconsumer.NewProducerCounter()
+	failMsgCount := channelconsumer.NewFailMsgCounter()
 	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file)
 
 	go func() {
@@ -47,11 +49,11 @@ func main() {
 
 	app := echo.New()
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCount, failMsgCount)
 	})
 
 	app.GET("/api/channel_details", func(c echo.Context) error {
-		return channel.ChannelDetails(c, messageQueue, consumerStorage)
+		return channel.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCount, failMsgCount)
 	})
 
 	if err := app.Start(":8080"); err != nil {
