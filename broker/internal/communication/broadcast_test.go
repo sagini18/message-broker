@@ -67,10 +67,12 @@ func TestBroadcast(t *testing.T) {
 	ConnSpy := &ConnSpy{}
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
-	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: ConnSpy})
+	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: ConnSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
+	producerCount := &channelconsumer.ProducerCounter{}
+	failMsgCount := &channelconsumer.FailMsgCounter{}
 
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -82,15 +84,15 @@ func TestBroadcast(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file)
+	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCount, failMsgCount)
 
 	assert.Nil(t, err)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	assert.Equal(t, "[{\"ID\":1,\"ChannelId\":123,\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
+	assert.Equal(t, "[{\"ID\":1,\"ChannelName\":\"123\",\"Content\":\"Hello, World!\"}]\n", rec.Body.String())
 
-	allMessags := messageQueue.Get(123)
+	allMessags := messageQueue.Get("123")
 	assert.Equal(t, 1, len(allMessags))
 	assert.Equal(t, "Hello, World!", allMessags[0].Content)
 }
@@ -108,11 +110,12 @@ func BenchmarkBroadcast(b *testing.B) {
 	connSpy := &ConnSpy{}
 
 	consumerStorage := channelconsumer.NewInMemoryInMemoryConsumerCache()
-	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannels: []int{123}, TcpConn: connSpy})
+	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: connSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
-
+	producerCount := channelconsumer.NewProducerCounter()
+	failMsgCount := channelconsumer.NewFailMsgCounter()
 	config, err := config.LoadConfig()
 	if err != nil {
 		config.FilePath = "./internal/persistence/persisted_messages.txt"
@@ -125,7 +128,7 @@ func BenchmarkBroadcast(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCount, failMsgCount)
 		assert.Nil(b, err)
 	}
 }

@@ -8,12 +8,15 @@ import (
 	"sync"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
+	"github.com/sirupsen/logrus"
 )
 
 type Persistence interface {
 	Write(data []byte, file *os.File) error
-	Read(channelId int, file *os.File) ([]channelconsumer.Message, error)
+	Read(channelId string, file *os.File) ([]channelconsumer.Message, error)
+	ReadAll(file *os.File) (map[string][]channelconsumer.Message, error)
 	Remove(messageId int, file *os.File) error
+	ReadCount(channelName string, file *os.File) int
 }
 
 type persistence struct {
@@ -38,7 +41,7 @@ func (p *persistence) Write(data []byte, file *os.File) error {
 	return nil
 }
 
-func (p *persistence) Read(channelId int, file *os.File) ([]channelconsumer.Message, error) {
+func (p *persistence) Read(channelId string, file *os.File) ([]channelconsumer.Message, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -58,10 +61,42 @@ func (p *persistence) Read(channelId int, file *os.File) ([]channelconsumer.Mess
 			}
 			return nil, fmt.Errorf("persistence.Read() : error decoding JSON: %v", err)
 		}
-		if msg.ChannelId != channelId {
+		if msg.ChannelName != channelId {
 			continue
 		}
 		messages = append(messages, msg)
+	}
+
+	return messages, nil
+}
+
+func (p *persistence) ReadAll(file *os.File) (map[string][]channelconsumer.Message, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		logrus.Error("Error in seeking file: ", err)
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(file)
+
+	messages := make(map[string][]channelconsumer.Message)
+
+	for {
+		var msg channelconsumer.Message
+		if err := decoder.Decode(&msg); err != nil {
+			if err == io.EOF {
+				break
+			}
+			logrus.Error("persistence.ReadAll() : Error in decoding JSON: ", err)
+			return nil, err
+		}
+		if _, found := messages[msg.ChannelName]; !found {
+			messages[msg.ChannelName] = []channelconsumer.Message{msg}
+			continue
+		}
+		messages[msg.ChannelName] = append(messages[msg.ChannelName], msg)
 	}
 
 	return messages, nil
@@ -106,4 +141,33 @@ func (p *persistence) Remove(messageID int, file *os.File) error {
 	}
 
 	return nil
+}
+
+func (p *persistence) ReadCount(channelName string, file *os.File) int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		logrus.Error("Error in seeking file: ", err)
+		return 0
+	}
+
+	decoder := json.NewDecoder(file)
+
+	count := 0
+	for {
+		var msg channelconsumer.Message
+		if err := decoder.Decode(&msg); err != nil {
+			if err == io.EOF {
+				break
+			}
+			logrus.Error("persist.ReadCount() : error decoding JSON: ", err)
+			return 0
+		}
+		if msg.ChannelName == channelName {
+			count++
+		}
+	}
+
+	return count
 }

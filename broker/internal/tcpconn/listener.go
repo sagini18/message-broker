@@ -47,13 +47,15 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 		}
 
 		for _, msg := range msgs {
-			logrus.Info("Message received as ack: ", msg)
+			// logrus.Info("Message received as ack: ", msg)
+
 			go func() {
 				if err := persist.Remove(msg.ID, file); err != nil {
-					logrus.Errorf("listenToConsumerMessages(): %v", err)
+					logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
 				}
 			}()
-			messageQueue.Remove(msg.ID, msg.ChannelId)
+
+			messageQueue.Remove(msg.ID, msg.ChannelName)
 		}
 	}
 }
@@ -66,8 +68,8 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
-				if c := store.Get(consumer.Id); c.TcpConn != nil {
-					store.Remove(consumer.Id)
+				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
+					store.Remove(consumer.Id, consumer.SubscribedChannel)
 				}
 				continue
 			}

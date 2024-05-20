@@ -8,19 +8,20 @@ import (
 
 type Storage interface {
 	Add(consumer *Consumer)
-	Remove(consumerId int)
-	GetAll() map[int]Consumer
-	Get(consumerId int) Consumer
+	Remove(consumerId int, channelName string)
+	GetAll() map[string][]Consumer
+	Get(consumerId int, channelName string) Consumer
+	GetByChannel(channelName string) []Consumer
 }
 
 type InMemoryConsumerCache struct {
 	mu        sync.RWMutex
-	consumers map[int]Consumer
+	consumers map[string][]Consumer
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 	return &InMemoryConsumerCache{
-		consumers: make(map[int]Consumer),
+		consumers: make(map[string][]Consumer),
 	}
 }
 
@@ -28,33 +29,74 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	cc.consumers[consumer.Id] = *consumer
+	if cacheConsumers, found := cc.consumers[consumer.SubscribedChannel]; found {
+		cacheConsumers := append(cacheConsumers, *consumer)
+		cc.consumers[consumer.SubscribedChannel] = cacheConsumers
+	} else {
+		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
+	}
 
 	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
-func (cc *InMemoryConsumerCache) Remove(consumerId int) {
+func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	delete(cc.consumers, consumerId)
-	logrus.Info("Removed consumerID from cache: ", consumerId)
-}
-
-func (cc *InMemoryConsumerCache) GetAll() map[int]Consumer {
-	cc.mu.RLock()
-	defer cc.mu.RUnlock()
-	// Create a copy of the map to avoid holding the lock during iteration
-	consumersCopy := make(map[int]Consumer)
-	for id, consumer := range cc.consumers {
-		consumersCopy[id] = consumer
+	cacheConsumers, found := cc.consumers[channelName]
+	if !found {
+		return
 	}
-	return consumersCopy
+
+	var updatedConsumers []Consumer
+	for _, consumer := range cacheConsumers {
+		if consumer.Id != consumerId {
+			updatedConsumers = append(updatedConsumers, consumer)
+			continue
+		}
+		logrus.Info("Removed consumerID from cache: ", consumerId)
+	}
+	cc.consumers[channelName] = updatedConsumers
+	if len(updatedConsumers) == 0 {
+		delete(cc.consumers, channelName)
+	}
 }
 
-func (cc *InMemoryConsumerCache) Get(consumerId int) Consumer {
+func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 
-	return cc.consumers[consumerId]
+	consumerCacheCopy := make(map[string][]Consumer)
+	for channelName, consumer := range cc.consumers {
+		consumerCacheCopy[channelName] = append([]Consumer(nil), consumer...)
+	}
+	return consumerCacheCopy
+}
+
+func (cc *InMemoryConsumerCache) Get(consumerId int, channelName string) Consumer {
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
+
+	consumers, found := cc.consumers[channelName]
+	if !found {
+		return Consumer{}
+	}
+
+	for _, consumer := range consumers {
+		if consumer.Id == consumerId {
+			return consumer
+		}
+	}
+	return Consumer{}
+}
+
+func (cc *InMemoryConsumerCache) GetByChannel(channelName string) []Consumer {
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
+
+	consumers, found := cc.consumers[channelName]
+	if !found {
+		return nil
+	}
+	return append([]Consumer(nil), consumers...)
 }

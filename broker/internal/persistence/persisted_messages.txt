@@ -1,4 +1,5 @@
-{"ID":1958179929,"ChannelId":9,"Content":545678}
-{"ID":1126924225,"ChannelId":9,"Content":5478}
-{"ID":1672944225,"ChannelId":10,"Content":45}
-{"ID":821989676,"ChannelId":4,"Content":"4567"}
+{"ID":1958179929,"ChannelName":"10","Content":545678}
+{"ID":1126924225,"ChannelName":"3","Content":5478}
+{"ID":1672944225,"ChannelName":"4","Content":45}
+{"ID":821989676,"ChannelName":"5","Content":"4567"}
+{"ID":1247265512,"ChannelName":"8","Content":{"username":"sagini"}}

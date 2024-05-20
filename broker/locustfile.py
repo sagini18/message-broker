@@ -7,3 +7,6 @@ class BroadcastMessages(HttpUser):
         data = {"content": "value"}  
         self.client.post(f"/api/channels/{id}", json=data)
         
+    @task
+    def get_channels(self):
+        self.client.get("/api/channel_details")
