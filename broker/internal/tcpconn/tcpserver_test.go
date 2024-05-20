@@ -78,7 +78,7 @@ func TestHandleNewClientConnection(t *testing.T) {
 	expectedConsumerId := 1
 	if assert.NotNil(t, consumer) {
 		assert.Equal(t, expectedConsumerId, consumer.Id)
-		assert.Equal(t, expectedChannel, consumer.SubscribedChannels[0])
+		assert.Equal(t, expectedChannel, consumer.SubscribedChannel)
 	}
 }
 

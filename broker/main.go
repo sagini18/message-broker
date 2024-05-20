@@ -11,6 +11,7 @@ import (
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
+	"github.com/sagini18/message-broker/broker/services/channel"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,6 +37,8 @@ func main() {
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	persist := persistence.New()
+	producerCounter := channelconsumer.NewProducerCounter()
+	failMsgCounter := channelconsumer.NewFailMsgCounter()
 	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file)
 
 	go func() {
@@ -46,8 +49,13 @@ func main() {
 
 	app := echo.New()
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCounter, failMsgCounter)
 	})
+
+	app.GET("/api/channel_details", func(c echo.Context) error {
+		return channel.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCounter, failMsgCounter)
+	})
+
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)
 	}
