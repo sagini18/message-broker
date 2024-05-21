@@ -19,7 +19,7 @@ export default function GraphCard({ count, name, color }) {
         <Card
           sx={{
             display: "flex",
-            width: "40vw",
+            width: "30vw",
             backgroundColor: `${color}`,
             justifyContent: "space-between",
             "&: hover": {

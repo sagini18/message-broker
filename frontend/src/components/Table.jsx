@@ -11,7 +11,7 @@ const columns = [
   {
     field: "id",
     type: "number",
-    width: 70,
+    width: 5,
     renderHeader: () => (
         <strong>
           {'ID'}
@@ -20,7 +20,7 @@ const columns = [
   },
   {
     field: "channelName",
-    type: "number", //need to change to string
+    type: "string",
     width: 130,
     renderHeader: () => (
         <strong>
@@ -29,7 +29,8 @@ const columns = [
       ),
   },
   {
-    field: "noOfMessages",
+    field: "noOfMessagesInQueue",
+    description: "The number of messages currently stored in queue",
     type: "number",
     width: 150,
     renderHeader: () => (
@@ -41,6 +42,7 @@ const columns = [
   {
     field: "noOfConsumers",
     type: "number",
+    description: "The number of consumers currently subscribed to the channel",
     width: 120,
     renderHeader: () => (
         <strong>
@@ -51,6 +53,7 @@ const columns = [
   {
     field: "noOfProdcuers",
     headerName: "Producers",
+    description: "The total number of messages sent to the channel since the server started",
     type: "number",
     width:120,
     renderHeader: () => (
@@ -60,8 +63,21 @@ const columns = [
       ),
   },
   {
+    field: "noOfMessagesInPersistence",
+    headerName: "Messages in Persistence",
+    description: "The number of messages currently stored in persistence",
+    type: "number",
+    width: 190,
+    renderHeader: () => (
+        <strong>
+          {'Messages in persistence'}
+        </strong>
+      ),
+  }, 
+  {
     field: "failedMessages",
     headerName: "Failed messages",
+    description: "The number of messages that failed to be delivered",
     type: "number",
     width: 150,
     renderHeader: () => (
@@ -75,74 +91,83 @@ const columns = [
 const rows = [
   {
     id: 1,
-    channelName: 1,
-    noOfMessages: 34,
+    channelName: "science",
+    noOfMessagesInQueue: 34,
     noOfConsumers: 35,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 1,
   },
   {
     id: 2,
-    channelName: 6,
-    noOfMessages: 87,
+    channelName: "channel_6",
+    noOfMessagesInQueue: 87,
     noOfConsumers: 42,
     noOfProdcuers: 25,
+    noOfMessagesInPersistence:2,
     failedMessages: 0,
   },
   {
     id: 3,
-    channelName: 2,
-    noOfMessages: 34,
+    channelName: "channel_2",
+    noOfMessagesInQueue: 34,
     noOfConsumers: 45,
     noOfProdcuers: 15,
+    noOfMessagesInPersistence:2,
     failedMessages: 2,
   },
   {
     id: 4,
-    channelName: 7,
-    noOfMessages: 45,
+    channelName: "channel_7",
+    noOfMessagesInQueue: 45,
     noOfConsumers: 16,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 0,
   },
   {
     id: 5,
-    channelName: 12,
-    noOfMessages: 34,
+    channelName: "channel_12",
+    noOfMessagesInQueue: 34,
     noOfConsumers: 7,
     noOfProdcuers: 10,
+    noOfMessagesInPersistence:2,
     failedMessages: 0,
   },
   {
     id: 6,
-    channelName: 11,
-    noOfMessages: null,
+    channelName: "maths",
+    noOfMessagesInQueue: 1,
     noOfConsumers: 150,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 1,
   },
   {
     id: 7,
-    channelName: 70,
-    noOfMessages: 56,
+    channelName: "70",
+    noOfMessagesInQueue: 56,
     noOfConsumers: 44,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 3,
   },
   {
     id: 8,
-    channelName: 87,
-    noOfMessages: 232,
+    channelName: "data_87",
+    noOfMessagesInQueue: 232,
     noOfConsumers: 36,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 0,
   },
   {
     id: 9,
-    channelName: 76,
-    noOfMessages: 12,
+    channelName: "channel_76",
+    noOfMessagesInQueue: 12,
     noOfConsumers: 65,
     noOfProdcuers: 5,
+    noOfMessagesInPersistence:2,
     failedMessages: 1,
   },
 ];
@@ -153,7 +178,7 @@ export default function DataTable() {
     pt={1}
       sx={{
         height: "47.8vh",
-        width: "55vw",
+        width: "65vw",
       }}>
       <DataGrid
         rows={rows}
