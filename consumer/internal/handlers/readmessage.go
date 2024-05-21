@@ -81,7 +81,7 @@ func decodeMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 		if len(receiver.ReadableReceivedMsgs) == 0 {
 			continue
 		}
-		if msg.ChannelId == -1 {
+		if msg.ChannelName == "-1" {
 			logrus.Info("Listening to channel: ", msg.Content)
 			continue
 		}
