@@ -52,7 +52,7 @@ func main() {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCounter, failMsgCounter)
 	})
 
-	app.GET("/api/channel_details", func(c echo.Context) error {
+	app.GET("/api/table/channel_details", func(c echo.Context) error {
 		return channel.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCounter, failMsgCounter)
 	})
 

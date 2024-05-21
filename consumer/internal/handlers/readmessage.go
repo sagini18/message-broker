@@ -86,7 +86,7 @@ func decodeMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 			continue
 		}
 
-		// logrus.Info("Received message: ", receiver.ReadableReceivedMsgs)
+		logrus.Info("Received message: ", receiver.ReadableReceivedMsgs)
 
 		WriteMessage(tcpConsumer, receiver)
 	}
