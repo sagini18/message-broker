@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -31,12 +32,10 @@ func (p *persistence) Write(data []byte, file *os.File) error {
 	defer p.mu.Unlock()
 
 	if _, err := file.Write(data); err != nil {
-		logrus.Error("Error in writing to file: ", err)
-		return err
+		return fmt.Errorf("persistence.Write(): %v", err)
 	}
 	if _, err := file.WriteString("\n"); err != nil {
-		logrus.Error("Error in writing newline: ", err)
-		return err
+		return fmt.Errorf("persistence.Write() newline error: %v", err)
 	}
 
 	return nil
@@ -47,8 +46,7 @@ func (p *persistence) Read(channelId string, file *os.File) ([]channelconsumer.M
 	defer p.mu.Unlock()
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		logrus.Error("Error in seeking file: ", err)
-		return nil, err
+		return nil, fmt.Errorf("persistence.Read() : seeking file error: %v", err)
 	}
 
 	decoder := json.NewDecoder(file)
@@ -61,8 +59,7 @@ func (p *persistence) Read(channelId string, file *os.File) ([]channelconsumer.M
 			if err == io.EOF {
 				break
 			}
-			logrus.Error("persistence.Read() : Error in decoding JSON: ", err)
-			return nil, err
+			return nil, fmt.Errorf("persistence.Read() : error decoding JSON: %v", err)
 		}
 		if msg.ChannelName != channelId {
 			continue
@@ -112,8 +109,7 @@ func (p *persistence) Remove(messageID int, file *os.File) error {
 	var modifiedContent []channelconsumer.Message
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		logrus.Error("Error in seeking file: ", err)
-		return err
+		return fmt.Errorf("persistence.Remove() : seeking file error: %v", err)
 	}
 
 	decoder := json.NewDecoder(file)
@@ -124,8 +120,7 @@ func (p *persistence) Remove(messageID int, file *os.File) error {
 			if err == io.EOF {
 				break
 			}
-			logrus.Error("persist.Remove() : error decoding JSON: ", err)
-			return err
+			return fmt.Errorf("persistence.Remove() : error decoding JSON: %v", err)
 		}
 		if msg.ID != messageID {
 			modifiedContent = append(modifiedContent, msg)
@@ -134,16 +129,14 @@ func (p *persistence) Remove(messageID int, file *os.File) error {
 
 	newFile, err := os.OpenFile(file.Name(), os.O_TRUNC|os.O_RDWR, 0644)
 	if err != nil {
-		logrus.Error("Error opening file for truncation: ", err)
-		return err
+		return fmt.Errorf("persistence.Remove() : error opening file: %v", err)
 	}
 
 	encoder := json.NewEncoder(newFile)
 
 	for _, msg := range modifiedContent {
 		if err := encoder.Encode(msg); err != nil {
-			logrus.Error("persist.Remove() : error encoding JSON: ", err)
-			return err
+			return fmt.Errorf("persistence.Remove() : error encoding JSON: %v", err)
 		}
 	}
 
