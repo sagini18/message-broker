@@ -3,3 +3,4 @@
 *.sum
 ./internal/persistence/persisted_messages.txt
 *.cpu.prof
+*.txt
