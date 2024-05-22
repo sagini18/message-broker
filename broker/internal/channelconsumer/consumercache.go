@@ -18,7 +18,7 @@ type Storage interface {
 	GetAll() map[string][]Consumer
 	Get(consumerId int, channelName string) Consumer
 	GetByChannel(channelName string) []Consumer
-	GetCount() []ConsumerEvent
+	GetEventCount() []ConsumerEvent
 }
 
 type InMemoryConsumerCache struct {
@@ -122,7 +122,7 @@ func (cc *InMemoryConsumerCache) recordEvent() {
 	})
 }
 
-func (cc *InMemoryConsumerCache) GetCount() []ConsumerEvent {
+func (cc *InMemoryConsumerCache) GetEventCount() []ConsumerEvent {
 	cc.mu.RLock()
 	defer cc.mu.RUnlock()
 

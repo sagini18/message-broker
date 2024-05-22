@@ -2,14 +2,12 @@ package channelconsumer
 
 import (
 	"net"
-	"time"
 )
 
 type Message struct {
 	ID          int
 	ChannelName string
 	Content     interface{}
-	ReceivedAt  time.Time
 }
 
 func NewMessage(id int, channelName string, content interface{}) *Message {
@@ -17,7 +15,6 @@ func NewMessage(id int, channelName string, content interface{}) *Message {
 		ID:          id,
 		ChannelName: channelName,
 		Content:     content,
-		ReceivedAt:  time.Now(),
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func Consumer(c echo.Context, consumerStore *channelconsumer.InMemoryConsumerCache) error {
-	consumerEvents := consumerStore.GetCount()
+	consumerEvents := consumerStore.GetEventCount()
 	if len(consumerEvents) == 0 {
 		return c.JSON(http.StatusNoContent, nil)
 	}
