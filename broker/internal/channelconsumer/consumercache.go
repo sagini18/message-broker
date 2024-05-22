@@ -2,9 +2,15 @@ package channelconsumer
 
 import (
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
+
+type ConsumerEvent struct {
+	Timestamp time.Time
+	Count     int
+}
 
 type Storage interface {
 	Add(consumer *Consumer)
@@ -12,16 +18,19 @@ type Storage interface {
 	GetAll() map[string][]Consumer
 	Get(consumerId int, channelName string) Consumer
 	GetByChannel(channelName string) []Consumer
+	GetCount() []ConsumerEvent
 }
 
 type InMemoryConsumerCache struct {
-	mu        sync.RWMutex
-	consumers map[string][]Consumer
+	mu             sync.RWMutex
+	consumers      map[string][]Consumer
+	consumerEvents []ConsumerEvent
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 	return &InMemoryConsumerCache{
-		consumers: make(map[string][]Consumer),
+		consumers:      make(map[string][]Consumer),
+		consumerEvents: []ConsumerEvent{},
 	}
 }
 
@@ -35,7 +44,7 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 	} else {
 		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
 	}
-
+	cc.recordEvent()
 	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
@@ -60,6 +69,7 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 	if len(updatedConsumers) == 0 {
 		delete(cc.consumers, channelName)
 	}
+	cc.recordEvent()
 }
 
 func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
@@ -99,4 +109,22 @@ func (cc *InMemoryConsumerCache) GetByChannel(channelName string) []Consumer {
 		return nil
 	}
 	return append([]Consumer(nil), consumers...)
+}
+
+func (cc *InMemoryConsumerCache) recordEvent() {
+	count := 0
+	for _, consumers := range cc.consumers {
+		count += len(consumers)
+	}
+	cc.consumerEvents = append(cc.consumerEvents, ConsumerEvent{
+		Timestamp: time.Now(),
+		Count:     count,
+	})
+}
+
+func (cc *InMemoryConsumerCache) GetCount() []ConsumerEvent {
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
+
+	return append([]ConsumerEvent(nil), cc.consumerEvents...)
 }

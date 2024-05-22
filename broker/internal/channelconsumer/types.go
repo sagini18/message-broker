@@ -25,7 +25,6 @@ type Consumer struct {
 	Id                int
 	SubscribedChannel string
 	TcpConn           net.Conn
-	JoinedAt          time.Time
 }
 
 func NewConsumer(id int, conn net.Conn, subscribedChannel string) *Consumer {
@@ -33,6 +32,5 @@ func NewConsumer(id int, conn net.Conn, subscribedChannel string) *Consumer {
 		Id:                id,
 		TcpConn:           conn,
 		SubscribedChannel: subscribedChannel,
-		JoinedAt:          time.Now(),
 	}
 }
