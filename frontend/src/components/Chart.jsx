@@ -1,15 +1,21 @@
-import * as React from 'react';
-import { LineChart } from '@mui/x-charts/LineChart';
+import * as React from "react";
+import { LineChart } from "@mui/x-charts/LineChart";
 
-export default function BasicLineChart({ color,name}) {
+export default function BasicLineChart({ color, name, xAxisData, seriesData }) {
+  console.log(xAxisData, seriesData);
   return (
     <LineChart
-    colors={[color]}
-      xAxis={[{ data: [1, 2, 3, 5, 8, 10] }]}
+      colors={[color]}
+      xAxis={[
+        {
+          // scaleType: "time",
+          data: xAxisData,
+        },
+      ]}
       series={[
         {
-          data: [2, 5.5, 2, 8.5, 1.5, 5],
-          label:`${name}`
+          data: seriesData,
+          label: `${name}`,
         },
       ]}
       width={500}

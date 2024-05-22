@@ -11,7 +11,8 @@ import (
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
-	"github.com/sagini18/message-broker/broker/services/channel"
+	"github.com/sagini18/message-broker/broker/services/chart"
+	"github.com/sagini18/message-broker/broker/services/table"
 	"github.com/sirupsen/logrus"
 )
 
@@ -48,12 +49,28 @@ func main() {
 	}()
 
 	app := echo.New()
+	// app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	// 	AllowOrigins: []string{"*"},
+	// 	AllowMethods: []string{echo.GET, echo.POST},
+	// 	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	// }))
+
+	// app.Use(middleware.Logger())
+
 	app.POST("/api/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCounter, failMsgCounter)
 	})
 
 	app.GET("/api/channel/all", func(c echo.Context) error {
-		return channel.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCounter, failMsgCounter)
+		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCounter, failMsgCounter)
+	})
+
+	app.GET("/api/consumer/count", func(c echo.Context) error {
+		return chart.Consumer(c, consumerStorage)
+	})
+
+	app.GET("/api/message/count", func(c echo.Context) error {
+		return chart.Messages(c, messageQueue)
 	})
 
 	if err := app.Start(":8080"); err != nil {
