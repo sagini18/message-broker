@@ -38,7 +38,7 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 	} else {
 		mc.messages[message.ChannelName] = []Message{message}
 	}
-	// logrus.Info("Added message to cache: ", message.Content)
+	logrus.Info("Added message to cache: ", message.Content)
 }
 
 func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
@@ -56,7 +56,7 @@ func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
 			updatedMessages = append(updatedMessages, msg)
 			continue
 		}
-		// logrus.Info("Removed message from cache: ", msg.Content)
+		logrus.Info("Removed message from cache: ", msg.Content)
 	}
 	mc.messages[channelName] = updatedMessages
 	if len(updatedMessages) == 0 {
@@ -76,12 +76,12 @@ func (mc *InMemoryMessageCache) SendPendingMessages(channelName string, connecti
 	if messages, found := messagesCopy[channelName]; found {
 		messageBytes, err := json.Marshal(messages)
 		if err != nil {
-			logrus.Error("SendPendingMessages() Error while marshalling message: ", err)
+			logrus.Error("channelconsumer.SendPendingMessages() Error while marshalling message: ", err)
 			return
 		}
 
 		if _, err = connection.Write(messageBytes); err != nil {
-			logrus.Error("SendPendingMessages() Error while writing previous messages to consumer: ", err)
+			logrus.Error("channelconsumer.SendPendingMessages() Error while writing previous messages to consumer: ", err)
 			return
 		}
 	}

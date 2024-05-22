@@ -19,7 +19,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 	for {
 		buffer, totalBytesRead, err := readMessages(connection, store, consumer)
 		if err != nil {
-			return fmt.Errorf("tcpconn.listenToConsumerMessages(): connection.Read error: %v", err)
+			return fmt.Errorf("listenToConsumerMessages(): connection.Read error: %v", err)
 		}
 
 		if totalBytesRead <= 0 {
@@ -41,13 +41,13 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 			trimedChunk = append(trimedChunk, ']')
 
 			if err := json.Unmarshal(trimedChunk, &msgs); err != nil {
-				logrus.Errorf("tcpconn.listenToConsumerMessages(): json.Unmarshal error: %v", err)
+				logrus.Errorf("listenToConsumerMessages(): json.Unmarshal error: %v", err)
 				continue
 			}
 		}
 
 		for _, msg := range msgs {
-			// logrus.Info("Message received as ack: ", msg)
+			logrus.Info("Message received as ack: ", msg)
 
 			go func() {
 				if err := persist.Remove(msg.ID, file); err != nil {

@@ -71,7 +71,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, channelName string
 	for _, consumer := range consumers {
 		messageBytes, err := json.Marshal(messageCacheData)
 		if err != nil {
-			logrus.Errorf("communication.writeMessage(): json.Marshal error: %v", err)
+			logrus.Errorf("writeMessage(): json.Marshal error: %v", err)
 			continue
 		}
 
