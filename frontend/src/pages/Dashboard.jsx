@@ -90,6 +90,10 @@ export default function Dashboard() {
     },
   ];
 
+  
+  const xAxisData = [2,4,5,6,7,8,9,10,11,12];
+  const seriesData = [0,1,2,3,4,5,2,1,3,4];
+
   return (
     <div>
       <NavBar />
@@ -100,16 +104,16 @@ export default function Dashboard() {
           flexDirection={"column"}
           justifyContent={"space-around"}>
           <GraphCard count={100} name={"No of producers"} color={"#5E35B1"} />
-          <GraphCard count={800} name={"No of consumers"} color={"#35B175"} />
-          <GraphCard count={14} name={"No of channels"} color={"#1E88E5"} />
+          <GraphCard count={800} name={"No of channels"} color={"#35B175"} />
+          <GraphCard count={14} name={"No of consumers"} color={"#1E88E5"} />
         </Box>
       </Box>
       <Box display={"flex"} justifyContent={"space-around"}pt={1}>
         <Paper elevation={3} sx={{backgroundColor:"#F1F1F1"}}>
-          <BasicLineChart color={"blue"} name="No of requests" />
+          <BasicLineChart color={"blue"} name="No of requests" xAxisData={xAxisData} seriesData={seriesData} />
         </Paper>
         <Paper elevation={3} sx={{backgroundColor:"#F1F1F1"}}>
-          <BasicLineChart color={"blue"} name="No of messages" />
+          <BasicLineChart color={"blue"} name="No of messages" xAxisData={xAxisData} seriesData={seriesData} />
         </Paper>
       </Box>
     </div>

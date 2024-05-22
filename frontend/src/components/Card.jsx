@@ -40,12 +40,12 @@ export default function GraphCard({ count, name, color }) {
               </Typography>
             </CardContent>
           </Box>
-          {name === "No of consumers" ? (
-            <AutoGraphIcon
-              sx={{ color: "white", fontSize: "4rem", pr: "1rem", pt: "1rem" }}
+          {name === "No of channels" ? (
+            <BarChartIcon
+            sx={{ color: "white", fontSize: "4rem", pr: "1rem", pt: "1rem" }}
             />
           ) : (
-            <BarChartIcon
+            <AutoGraphIcon
               sx={{ color: "white", fontSize: "4rem", pr: "1rem", pt: "1rem" }}
             />
           )}

@@ -1,4 +1,4 @@
-package channel
+package table
 
 import (
 	"net/http"
