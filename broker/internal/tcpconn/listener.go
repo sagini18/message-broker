@@ -67,6 +67,9 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 	for {
 		n, err := connection.Read(buffer[totalBytesRead:])
 		if err != nil {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				continue
+			}
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
 					store.Remove(consumer.Id, consumer.SubscribedChannel)

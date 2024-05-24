@@ -73,6 +73,10 @@ func main() {
 		return chart.Messages(c, messageQueue)
 	})
 
+	app.GET("/api/request/count", func(c echo.Context) error {
+		return chart.Request(c, requestCounter)
+	})
+
 	if err := app.Start(":8080"); err != nil {
 		logrus.Fatalf("Error in starting API server: %v", err)
 	}

@@ -3,6 +3,7 @@ package channelconsumer
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type Counter interface {
@@ -10,33 +11,69 @@ type Counter interface {
 	Get(channelName string) int
 }
 
+type RequestEvent struct {
+	Timestamp time.Time
+	Count     uint32
+}
+
 type RequestCounter struct {
-	mu    sync.RWMutex
-	count map[string]*atomic.Uint32
+	mu            sync.RWMutex
+	count         map[string]*atomic.Uint32
+	requestEvents []RequestEvent
 }
 
 func NewRequestCounter() *RequestCounter {
 	return &RequestCounter{
-		count: make(map[string]*atomic.Uint32),
+		count:         make(map[string]*atomic.Uint32),
+		requestEvents: []RequestEvent{},
 	}
 }
 
-func (p *RequestCounter) Add(channelName string) {
-	p.mu.Lock()
-	if _, exists := p.count[channelName]; !exists {
-		p.count[channelName] = new(atomic.Uint32)
+func (rc *RequestCounter) Add(channelName string) {
+	rc.mu.Lock()
+	if _, exists := rc.count[channelName]; !exists {
+		rc.count[channelName] = new(atomic.Uint32)
 	}
-	p.count[channelName].Add(1)
-	p.mu.Unlock()
+	rc.count[channelName].Add(1)
+	rc.mu.Unlock()
+
+	rc.recordEvent()
 }
 
-func (p *RequestCounter) Get(channelName string) int {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	if count, exists := p.count[channelName]; exists {
+func (rc *RequestCounter) Get(channelName string) int {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+	if count, exists := rc.count[channelName]; exists {
 		return int(count.Load())
 	}
 	return 0
+}
+
+func (rc *RequestCounter) recordEvent() {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	if len(rc.requestEvents) < 1 {
+		rc.requestEvents = append(rc.requestEvents, RequestEvent{
+			Timestamp: time.Now(),
+			Count:     1,
+		})
+		return
+	}
+	lastNo := rc.requestEvents[len(rc.requestEvents)-1].Count
+
+	rc.requestEvents = append(rc.requestEvents, RequestEvent{
+		Timestamp: time.Now(),
+		Count:     lastNo + 1,
+	})
+
+}
+
+func (rc *RequestCounter) GetEventCount() []RequestEvent {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	return append([]RequestEvent(nil), rc.requestEvents...)
 }
 
 type FailMsgCounter struct {
