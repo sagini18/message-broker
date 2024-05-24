@@ -54,6 +54,7 @@ func TestHandleNewClientConnection(t *testing.T) {
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	mockPersist := persistence.New()
+	mockChannel := channelconsumer.NewChannel()
 
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -65,7 +66,7 @@ func TestHandleNewClientConnection(t *testing.T) {
 	}
 	defer file.Close()
 
-	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist, file)
+	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist, file, mockChannel)
 
 	mockConn := &MockConn{}
 

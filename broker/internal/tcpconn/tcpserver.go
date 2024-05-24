@@ -19,9 +19,10 @@ type TCPServer struct {
 	messageIdGenerator  channelconsumer.IdGenerator
 	persist             persistence.Persistence
 	file                *os.File
+	channel             channelconsumer.ChannelStorage
 }
 
-func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence, file *os.File) *TCPServer {
+func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence, file *os.File, channel channelconsumer.ChannelStorage) *TCPServer {
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
@@ -30,6 +31,7 @@ func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.Me
 		messageIdGenerator:  messageIdGenerator,
 		persist:             persist,
 		file:                file,
+		channel:             channel,
 	}
 }
 
@@ -59,7 +61,7 @@ func (t *TCPServer) Listen() error {
 				t.messageQueue.SendPendingMessages(channel, conn)
 			}
 
-			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist, t.file); err != nil {
+			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist, t.file, t.channel); err != nil {
 				logrus.Errorf("tcpserver.Listen():  %v", err)
 			}
 		}()
@@ -75,6 +77,10 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (string, *cha
 	}
 
 	channel := string(channelBuf[:n])
+
+	if len(t.consumerStore.GetByChannel(channel)) == 0 && len(t.messageQueue.Get(channel)) == 0 {
+		t.channel.Add()
+	}
 
 	newId := t.consumerIdGenerator.NewId()
 	consumer := channelconsumer.NewConsumer(newId, connection, channel)

@@ -13,11 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence, file *os.File) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence, file *os.File, channel channelconsumer.ChannelStorage) error {
 	defer connection.Close()
 
 	for {
-		buffer, totalBytesRead, err := readMessages(connection, store, consumer)
+		buffer, totalBytesRead, err := readMessages(connection, store, consumer, messageQueue, channel)
 		if err != nil {
 			return fmt.Errorf("listenToConsumerMessages(): connection.Read error: %v", err)
 		}
@@ -54,13 +54,16 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 					logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
 				}
 			}()
-
 			messageQueue.Remove(msg.ID, msg.ChannelName)
+
+			if messageQueue.GetCount(msg.ChannelName) == 0 && len(store.GetByChannel(msg.ChannelName)) == 0 {
+				channel.Remove()
+			}
 		}
 	}
 }
 
-func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *channelconsumer.Consumer) ([]byte, int, error) {
+func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *channelconsumer.Consumer, messageQueue channelconsumer.MessageStorage, channel channelconsumer.ChannelStorage) ([]byte, int, error) {
 	totalBytesRead := 0
 	buffer := make([]byte, 200)
 
@@ -73,6 +76,10 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
 					store.Remove(consumer.Id, consumer.SubscribedChannel)
+
+					if len(store.GetByChannel(consumer.SubscribedChannel)) == 0 && len(messageQueue.Get(consumer.SubscribedChannel)) == 0 {
+						channel.Remove()
+					}
 				}
 				continue
 			}

@@ -40,7 +40,8 @@ func main() {
 	persist := persistence.New()
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCounter := channelconsumer.NewFailMsgCounter()
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file)
+	channel := channelconsumer.NewChannel()
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file, channel)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
@@ -58,7 +59,7 @@ func main() {
 	// app.Use(middleware.Logger())
 
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCounter)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCounter, channel)
 	})
 
 	app.GET("/api/channel/all", func(c echo.Context) error {
@@ -75,6 +76,10 @@ func main() {
 
 	app.GET("/api/request/count", func(c echo.Context) error {
 		return chart.Request(c, requestCounter)
+	})
+
+	app.GET("/api/channel/count", func(c echo.Context) error {
+		return chart.Channel(c, channel)
 	})
 
 	if err := app.Start(":8080"); err != nil {
