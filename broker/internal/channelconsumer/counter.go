@@ -10,18 +10,18 @@ type Counter interface {
 	Get(channelName string) int
 }
 
-type ProducerCounter struct {
+type RequestCounter struct {
 	mu    sync.RWMutex
 	count map[string]*atomic.Uint32
 }
 
-func NewProducerCounter() *ProducerCounter {
-	return &ProducerCounter{
+func NewRequestCounter() *RequestCounter {
+	return &RequestCounter{
 		count: make(map[string]*atomic.Uint32),
 	}
 }
 
-func (p *ProducerCounter) Add(channelName string) {
+func (p *RequestCounter) Add(channelName string) {
 	p.mu.Lock()
 	if _, exists := p.count[channelName]; !exists {
 		p.count[channelName] = new(atomic.Uint32)
@@ -30,7 +30,7 @@ func (p *ProducerCounter) Add(channelName string) {
 	p.mu.Unlock()
 }
 
-func (p *ProducerCounter) Get(channelName string) int {
+func (p *RequestCounter) Get(channelName string) int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	if count, exists := p.count[channelName]; exists {
