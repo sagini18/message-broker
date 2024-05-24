@@ -30,9 +30,9 @@ import (
 *   - error: Returns an error if there is any issue during the process, otherwise returns nil.
  */
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, producerCount *channelconsumer.ProducerCounter, failMsgCounter *channelconsumer.FailMsgCounter) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter) error {
 	channelName := context.Param("id")
-	producerCount.Add(channelName)
+	requestCount.Add(channelName)
 
 	messageId := messageIdGenerator.NewId()
 	message := channelconsumer.NewMessage(messageId, channelName, nil)

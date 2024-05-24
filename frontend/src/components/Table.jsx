@@ -51,14 +51,14 @@ const columns = [
       ),
   },
   {
-    field: "noOfProdcuers",
-    headerName: "Producers",
+    field: "noOfRequests",
+    headerName: "Requests",
     description: "The total number of messages sent to the channel since the server started",
     type: "number",
     width:120,
     renderHeader: () => (
         <strong>
-          {'Producers'}
+          {'Requests'}
         </strong>
       ),
   },

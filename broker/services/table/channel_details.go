@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, producerCount *channelconsumer.ProducerCounter, failMsgCount *channelconsumer.FailMsgCounter) error {
+func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter) error {
 	messages := messageQueue.GetAll()
 	consumers := consumerStorage.GetAll()
 	persistMessages, err := persist.ReadAll(file)
@@ -44,7 +44,7 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 			"channelName":               channelName,
 			"noOfMessagesInQueue":       messageQueue.GetCount(channelName),
 			"noOfConsumers":             len(consumers[channelName]),
-			"noOfProducers":             producerCount.Get(channelName),
+			"noOfRequests":              requestCounter.Get(channelName),
 			"noOfMessagesInPersistence": persist.ReadCount(channelName, file),
 			"failedMessages":            failMsgCount.Get(channelName),
 		}

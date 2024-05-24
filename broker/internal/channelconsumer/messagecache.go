@@ -4,9 +4,15 @@ import (
 	"encoding/json"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
+
+type MessageEvent struct {
+	Timestamp time.Time
+	Count     int
+}
 
 type MessageStorage interface {
 	Add(message Message)
@@ -15,16 +21,19 @@ type MessageStorage interface {
 	SendPendingMessages(channelName string, connection net.Conn)
 	GetAll() map[string][]Message
 	GetCount(channelName string) int
+	GetEventCount() []MessageEvent
 }
 
 type InMemoryMessageCache struct {
-	mu       sync.RWMutex
-	messages map[string][]Message
+	mu            sync.RWMutex
+	messages      map[string][]Message
+	messageEvents []MessageEvent
 }
 
 func NewInMemoryMessageQueue() *InMemoryMessageCache {
 	return &InMemoryMessageCache{
-		messages: make(map[string][]Message),
+		messages:      make(map[string][]Message),
+		messageEvents: []MessageEvent{},
 	}
 }
 
@@ -39,6 +48,7 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 		mc.messages[message.ChannelName] = []Message{message}
 	}
 	logrus.Info("Added message to cache: ", message.Content)
+	mc.recordEvent()
 }
 
 func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
@@ -62,6 +72,7 @@ func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
 	if len(updatedMessages) == 0 {
 		delete(mc.messages, channelName)
 	}
+	mc.recordEvent()
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelName string, connection net.Conn) {
@@ -112,4 +123,22 @@ func (mc *InMemoryMessageCache) GetCount(channelName string) int {
 	defer mc.mu.RUnlock()
 
 	return len(mc.messages[channelName])
+}
+
+func (mc *InMemoryMessageCache) recordEvent() {
+	count := 0
+	for _, messages := range mc.messages {
+		count += len(messages)
+	}
+	mc.messageEvents = append(mc.messageEvents, MessageEvent{
+		Timestamp: time.Now(),
+		Count:     count,
+	})
+}
+
+func (mc *InMemoryMessageCache) GetEventCount() []MessageEvent {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	return append([]MessageEvent(nil), mc.messageEvents...)
 }

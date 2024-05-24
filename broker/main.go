@@ -38,7 +38,7 @@ func main() {
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	persist := persistence.New()
-	producerCounter := channelconsumer.NewProducerCounter()
+	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCounter := channelconsumer.NewFailMsgCounter()
 	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file)
 
@@ -58,11 +58,11 @@ func main() {
 	// app.Use(middleware.Logger())
 
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCounter, failMsgCounter)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCounter)
 	})
 
 	app.GET("/api/channel/all", func(c echo.Context) error {
-		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, producerCounter, failMsgCounter)
+		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, requestCounter, failMsgCounter)
 	})
 
 	app.GET("/api/consumer/count", func(c echo.Context) error {

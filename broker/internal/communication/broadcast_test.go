@@ -71,7 +71,7 @@ func TestBroadcast(t *testing.T) {
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
-	producerCount := &channelconsumer.ProducerCounter{}
+	requestCounter := &channelconsumer.RequestCounter{}
 	failMsgCount := &channelconsumer.FailMsgCounter{}
 
 	config, err := config.LoadConfig()
@@ -84,7 +84,7 @@ func TestBroadcast(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCount, failMsgCount)
+	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount)
 
 	assert.Nil(t, err)
 
@@ -114,7 +114,7 @@ func BenchmarkBroadcast(b *testing.B) {
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	persist := persistence.New()
-	producerCount := channelconsumer.NewProducerCounter()
+	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCount := channelconsumer.NewFailMsgCounter()
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -128,7 +128,7 @@ func BenchmarkBroadcast(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, producerCount, failMsgCount)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount)
 		assert.Nil(b, err)
 	}
 }
