@@ -30,9 +30,13 @@ import (
 *   - error: Returns an error if there is any issue during the process, otherwise returns nil.
  */
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel) error {
 	channelName := context.Param("id")
 	requestCount.Add(channelName)
+
+	if len(messageQueue.Get(channelName)) == 0 && len(consumerStorage.GetByChannel(channelName)) == 0 {
+		channel.Add()
+	}
 
 	messageId := messageIdGenerator.NewId()
 	message := channelconsumer.NewMessage(messageId, channelName, nil)
@@ -53,7 +57,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	cachedMessages := messageQueue.Get(channelName)
 
 	go func() {
-		if error := writeMessage(cachedMessages, channelName, consumerStorage); error != nil {
+		if error := writeMessage(cachedMessages, channelName, consumerStorage, messageQueue, channel); error != nil {
 			failMsgCounter.Add(channelName)
 			logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 		}
@@ -61,7 +65,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	return context.JSON(http.StatusOK, cachedMessages)
 }
 
-func writeMessage(messageCacheData []channelconsumer.Message, channelName string, store *channelconsumer.InMemoryConsumerCache) error {
+func writeMessage(messageCacheData []channelconsumer.Message, channelName string, store *channelconsumer.InMemoryConsumerCache, messageQueue *channelconsumer.InMemoryMessageCache, channel *channelconsumer.Channel) error {
 	consumers := store.GetByChannel(channelName)
 
 	if len(consumers) == 0 {
@@ -79,6 +83,10 @@ func writeMessage(messageCacheData []channelconsumer.Message, channelName string
 			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
 					store.Remove(consumer.Id, consumer.SubscribedChannel)
+
+					if len(store.GetByChannel(consumer.SubscribedChannel)) == 0 && len(messageQueue.Get(consumer.SubscribedChannel)) == 0 {
+						channel.Remove()
+					}
 				}
 				continue
 			}

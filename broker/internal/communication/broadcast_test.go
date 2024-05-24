@@ -73,7 +73,7 @@ func TestBroadcast(t *testing.T) {
 	persist := persistence.New()
 	requestCounter := &channelconsumer.RequestCounter{}
 	failMsgCount := &channelconsumer.FailMsgCounter{}
-
+	channel := channelconsumer.NewChannel()
 	config, err := config.LoadConfig()
 	if err != nil {
 		config.FilePath = "./internal/persistence/persisted_messages.txt"
@@ -84,7 +84,7 @@ func TestBroadcast(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount)
+	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel)
 
 	assert.Nil(t, err)
 
@@ -116,6 +116,7 @@ func BenchmarkBroadcast(b *testing.B) {
 	persist := persistence.New()
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCount := channelconsumer.NewFailMsgCounter()
+	channel := channelconsumer.NewChannel()
 	config, err := config.LoadConfig()
 	if err != nil {
 		config.FilePath = "./internal/persistence/persisted_messages.txt"
@@ -128,7 +129,7 @@ func BenchmarkBroadcast(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel)
 		assert.Nil(b, err)
 	}
 }
