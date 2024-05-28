@@ -62,7 +62,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 			logrus.Errorf("communication.Broadcast(): writeMessage error: %v", error)
 		}
 	}()
-	return context.JSON(http.StatusOK, cachedMessages)
+	return context.JSON(http.StatusOK, message)
 }
 
 func writeMessage(messageCacheData []channelconsumer.Message, channelName string, store *channelconsumer.InMemoryConsumerCache, messageQueue *channelconsumer.InMemoryMessageCache, channel *channelconsumer.Channel) error {
