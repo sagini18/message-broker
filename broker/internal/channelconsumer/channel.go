@@ -3,6 +3,8 @@ package channelconsumer
 import (
 	"sync"
 	"time"
+
+	"github.com/sagini18/message-broker/broker/metrics"
 )
 
 type ChannelStorage interface {
@@ -38,6 +40,7 @@ func (c *Channel) Add() {
 			Timestamp: time.Now(),
 			Count:     1,
 		})
+		// metrics.ChannelGauge.Inc()
 		c.notifySSE()
 		return
 	}
@@ -48,6 +51,7 @@ func (c *Channel) Add() {
 		Count:     lastCount + 1,
 	},
 	)
+	// metrics.ChannelGauge.Inc()
 	c.notifySSE()
 }
 
@@ -65,6 +69,7 @@ func (c *Channel) Remove() {
 		Count:     lastCount - 1,
 	},
 	)
+	metrics.ChannelGauge.Dec()
 	c.notifySSE()
 }
 

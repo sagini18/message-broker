@@ -33,6 +33,7 @@ import (
 func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel) error {
 	channelName := context.Param("id")
 	requestCount.Add(channelName)
+	// metrics.RequestCount.Inc()
 
 	if len(messageQueue.Get(channelName)) == 0 && len(consumerStorage.GetByChannel(channelName)) == 0 {
 		channel.Add()

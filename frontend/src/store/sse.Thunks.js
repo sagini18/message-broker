@@ -14,7 +14,7 @@ export const startSSEConnection = createAsyncThunk(
 
     eventSource.onopen = () => {
       dispatch(connectChannel());
-      dispatch(setEventSource(eventSource));
+      dispatch(setEventSource(eventSource.url));
     };
 
     eventSource.onmessage = (event) => {
