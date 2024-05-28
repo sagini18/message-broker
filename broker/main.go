@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
@@ -50,13 +51,11 @@ func main() {
 	}()
 
 	app := echo.New()
-	// app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-	// 	AllowOrigins: []string{"*"},
-	// 	AllowMethods: []string{echo.GET, echo.POST},
-	// 	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	// }))
-
-	// app.Use(middleware.Logger())
+	app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{echo.GET, echo.POST},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
 
 	app.POST("/api/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCounter, channel)

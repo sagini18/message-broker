@@ -19,11 +19,13 @@ type ChannelEvent struct {
 type Channel struct {
 	mu           sync.Mutex
 	channelEvent []ChannelEvent
+	sseChannel   chan struct{}
 }
 
 func NewChannel() *Channel {
 	return &Channel{
 		channelEvent: []ChannelEvent{},
+		sseChannel:   make(chan struct{}, 1),
 	}
 }
 
@@ -36,6 +38,7 @@ func (c *Channel) Add() {
 			Timestamp: time.Now(),
 			Count:     1,
 		})
+		c.notifySSE()
 		return
 	}
 
@@ -45,6 +48,7 @@ func (c *Channel) Add() {
 		Count:     lastCount + 1,
 	},
 	)
+	c.notifySSE()
 }
 
 func (c *Channel) Remove() {
@@ -61,6 +65,7 @@ func (c *Channel) Remove() {
 		Count:     lastCount - 1,
 	},
 	)
+	c.notifySSE()
 }
 
 func (c *Channel) Get() []ChannelEvent {
@@ -68,4 +73,15 @@ func (c *Channel) Get() []ChannelEvent {
 	defer c.mu.Unlock()
 
 	return append([]ChannelEvent{}, c.channelEvent...)
+}
+
+func (c *Channel) SSEChannel() <-chan struct{} {
+	return c.sseChannel
+}
+
+func (c *Channel) notifySSE() {
+	select {
+	case c.sseChannel <- struct{}{}:
+	default:
+	}
 }
