@@ -25,6 +25,7 @@ func Channel(c echo.Context, channel *channelconsumer.Channel) error {
 		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
 		return err
 	}
+	fmt.Println("CHANNEL data sent to frontend***********: ", string(data))
 	fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 	flusher.Flush()
 
@@ -39,6 +40,7 @@ func Channel(c echo.Context, channel *channelconsumer.Channel) error {
 				http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
 				return err
 			}
+			fmt.Println("CHANNEL data sent to frontend***********: ", string(data))
 			fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 			flusher.Flush()
 		case <-c.Request().Context().Done():

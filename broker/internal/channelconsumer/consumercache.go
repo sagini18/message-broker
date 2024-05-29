@@ -25,12 +25,14 @@ type InMemoryConsumerCache struct {
 	mu             sync.RWMutex
 	consumers      map[string][]Consumer
 	consumerEvents []ConsumerEvent
+	sseChannel     chan struct{}
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 	return &InMemoryConsumerCache{
 		consumers:      make(map[string][]Consumer),
 		consumerEvents: []ConsumerEvent{},
+		sseChannel:     make(chan struct{}, 1),
 	}
 }
 
@@ -45,6 +47,7 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
 	}
 	cc.recordEvent()
+	cc.notifySSE()
 	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
@@ -70,6 +73,7 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 		delete(cc.consumers, channelName)
 	}
 	cc.recordEvent()
+	cc.notifySSE()
 }
 
 func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
@@ -123,8 +127,19 @@ func (cc *InMemoryConsumerCache) recordEvent() {
 }
 
 func (cc *InMemoryConsumerCache) GetEventCount() []ConsumerEvent {
-	cc.mu.RLock()
-	defer cc.mu.RUnlock()
+	cc.mu.Lock()
+	defer cc.mu.Unlock()
 
-	return append([]ConsumerEvent(nil), cc.consumerEvents...)
+	return append([]ConsumerEvent{}, cc.consumerEvents...)
+}
+
+func (cc *InMemoryConsumerCache) notifySSE() {
+	select {
+	case cc.sseChannel <- struct{}{}:
+	default:
+	}
+}
+
+func (cc *InMemoryConsumerCache) SSEChannel() <-chan struct{} {
+	return cc.sseChannel
 }

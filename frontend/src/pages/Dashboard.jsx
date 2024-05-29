@@ -4,8 +4,32 @@ import DataTable from "../components/Table";
 import BasicLineChart from "../components/Chart";
 import { Box, Paper } from "@mui/material";
 import GraphCard from "../components/Card";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  startChannelConnection,
+  stopChannelConnection,
+} from "../store/channel/sse.Thunks";
+import {
+  startConsumerConnection,
+  stopConsumerConnection,
+} from "../store/consumer/sse.Thunks";
 
 export default function Dashboard() {
+  const dispatch = useDispatch();
+  const { channelEvents } = useSelector((state) => state.channel);
+  const { consumerEvents } = useSelector((state) => state.consumer);
+
+  useEffect(() => {
+    dispatch(startChannelConnection());
+    dispatch(startConsumerConnection());
+
+    return () => {
+      dispatch(stopChannelConnection());
+      dispatch(stopConsumerConnection());
+    };
+  }, [dispatch]);
+
   const rows = [
     {
       id: 1,
@@ -13,7 +37,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 34,
       noOfConsumers: 35,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 1,
     },
     {
@@ -22,7 +46,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 87,
       noOfConsumers: 42,
       noOfRequests: 25,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 0,
     },
     {
@@ -31,7 +55,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 34,
       noOfConsumers: 45,
       noOfRequests: 15,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 2,
     },
     {
@@ -40,7 +64,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 45,
       noOfConsumers: 16,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 0,
     },
     {
@@ -49,7 +73,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 34,
       noOfConsumers: 7,
       noOfRequests: 10,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 0,
     },
     {
@@ -58,7 +82,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 1,
       noOfConsumers: 150,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 1,
     },
     {
@@ -67,7 +91,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 56,
       noOfConsumers: 44,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 3,
     },
     {
@@ -76,7 +100,7 @@ export default function Dashboard() {
       noOfMessagesInQueue: 232,
       noOfConsumers: 36,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 0,
     },
     {
@@ -85,15 +109,10 @@ export default function Dashboard() {
       noOfMessagesInQueue: 12,
       noOfConsumers: 65,
       noOfRequests: 5,
-      noOfMessagesInPersistence:2,
+      noOfMessagesInPersistence: 2,
       failedMessages: 1,
     },
   ];
-
-  
-  const xAxisData = [2,4,5,6,7,8,9,10,11,12];
-  const seriesData = [0,1,2,3,4,5,2,1,3,4];
-
   return (
     <div>
       <NavBar />
@@ -103,17 +122,33 @@ export default function Dashboard() {
           display={"flex"}
           flexDirection={"column"}
           justifyContent={"space-around"}>
-          <GraphCard count={100} name={"No of requests"} color={"#5E35B1"} />
-          <GraphCard count={800} name={"No of channels"} color={"#35B175"} />
-          <GraphCard count={14} name={"No of consumers"} color={"#1E88E5"} />
+          <GraphCard
+            name={"No of requests"}
+            color={"#5E35B1"}
+            dataset={channelEvents}
+          />
+          <GraphCard
+            name={"No of channels"}
+            color={"#35B175"}
+            dataset={channelEvents}
+          />
+          <GraphCard
+            name={"No of consumers"}
+            color={"#1E88E5"}
+            dataset={consumerEvents}
+          />
         </Box>
       </Box>
-      <Box display={"flex"} justifyContent={"space-around"}pt={1}>
+      <Box display={"flex"} justifyContent={"space-around"} pt={1}>
         {/* <Paper elevation={3} sx={{backgroundColor:"#F1F1F1"}}>
           <BasicLineChart color={"blue"} name="No of requests" xAxisData={xAxisData} seriesData={seriesData} />
         </Paper> */}
-        <Paper elevation={3} sx={{backgroundColor:"#F1F1F1"}}>
-          <BasicLineChart color={"blue"} name="No of messages" xAxisData={xAxisData} seriesData={seriesData} />
+        <Paper elevation={3} sx={{ backgroundColor: "#F1F1F1" }}>
+          <BasicLineChart
+            color={"blue"}
+            name="No of messages"
+            dataset={channelEvents}
+          />
         </Paper>
       </Box>
     </div>

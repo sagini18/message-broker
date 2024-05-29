@@ -9,7 +9,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import CardModel from "./Model";
 import { Paper } from "@mui/material";
 
-export default function GraphCard({ count, name, color }) {
+export default function GraphCard({ dataset, name, color }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export default function GraphCard({ count, name, color }) {
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             <CardContent sx={{ flex: "1 0 auto" }}>
               <Typography component="div" variant="h5" color={"white"}>
-                {count}
+                {dataset.length > 0 ? dataset[dataset.length - 1].Count : 0}
               </Typography>
               <Typography
                 variant="subtitle2"
@@ -51,7 +51,7 @@ export default function GraphCard({ count, name, color }) {
           )}
         </Card>
       </Paper>
-      <CardModel open={open} handleClose={() => setOpen(false)} name={name} color={color} />
+      <CardModel open={open} handleClose={() => setOpen(false)} name={name} color={color} dataset={dataset} />
     </>
   );
 }
