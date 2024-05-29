@@ -3,6 +3,7 @@ import channelReducer from './channel/channelSlice';
 import consumerReducer from './consumer/consumerSlice';
 import requestReducer from "./request/requestSlice"
 import messageReducer from "./message/messageSlice"
+import channelSummaryReducer from "./channel_summary/channSumSlice"
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     consumer: consumerReducer,
     request: requestReducer,
     message: messageReducer,
+    channSum: channelSummaryReducer,
   },
 });
 

@@ -92,13 +92,15 @@ func (rc *RequestCounter) notifySSE() {
 }
 
 type FailMsgCounter struct {
-	mu    sync.RWMutex
-	count map[string]*atomic.Uint32
+	mu         sync.RWMutex
+	count      map[string]*atomic.Uint32
+	sseChannel chan struct{}
 }
 
 func NewFailMsgCounter() *FailMsgCounter {
 	return &FailMsgCounter{
-		count: make(map[string]*atomic.Uint32),
+		count:      make(map[string]*atomic.Uint32),
+		sseChannel: make(chan struct{}, 1),
 	}
 }
 
@@ -109,6 +111,8 @@ func (f *FailMsgCounter) Add(channelName string) {
 	}
 	f.count[channelName].Add(1)
 	f.mu.Unlock()
+
+	f.notifySSE()
 }
 
 func (f *FailMsgCounter) Get(channelName string) int {
@@ -128,4 +132,15 @@ func (f *FailMsgCounter) GetAllChannel() []string {
 		channels = append(channels, channel)
 	}
 	return channels
+}
+
+func (f *FailMsgCounter) SSEChannel() <-chan struct{} {
+	return f.sseChannel
+}
+
+func (f *FailMsgCounter) notifySSE() {
+	select {
+	case f.sseChannel <- struct{}{}:
+	default:
+	}
 }

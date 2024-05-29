@@ -4,7 +4,7 @@ import {
   disconnectChannel,
   setChannelEvents,
   setEventSourceUrl,
-} from "../channel/channelSlice.js";
+} from "./channelSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
 
 export const startChannelConnection = createAsyncThunk(

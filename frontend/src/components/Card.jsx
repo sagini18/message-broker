@@ -19,7 +19,7 @@ export default function GraphCard({ dataset, name, color }) {
         <Card
           sx={{
             display: "flex",
-            width: "30vw",
+            width: "35vw",
             backgroundColor: `${color}`,
             justifyContent: "space-between",
             "&: hover": {

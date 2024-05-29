@@ -22,6 +22,10 @@ import {
   startMsgConnection,
   stopMsgConnection,
 } from "../store/message/sse.Thunks";
+import {
+  startChannSumConnection,
+  stopChannSumConnection,
+} from "../store/channel_summary/sse.Thunks";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -29,109 +33,38 @@ export default function Dashboard() {
   const { consumerEvents } = useSelector((state) => state.consumer);
   const { requestEvents } = useSelector((state) => state.request);
   const { msgEvents } = useSelector((state) => state.message);
+  const { channSumEvents } = useSelector((state) => state.channSum);
 
   useEffect(() => {
     dispatch(startChannelConnection());
     dispatch(startConsumerConnection());
     dispatch(startRequestConnection());
     dispatch(startMsgConnection());
+    dispatch(startChannSumConnection());
 
     return () => {
       dispatch(stopChannelConnection());
       dispatch(stopConsumerConnection());
       dispatch(stopRequestConnection());
       dispatch(stopMsgConnection());
+      dispatch(stopChannSumConnection());
     };
   }, [dispatch]);
 
-  const rows = [
-    {
-      id: 1,
-      channelName: "science",
-      noOfMessagesInQueue: 34,
-      noOfConsumers: 35,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 1,
-    },
-    {
-      id: 2,
-      channelName: "channel_6",
-      noOfMessagesInQueue: 87,
-      noOfConsumers: 42,
-      noOfRequests: 25,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 0,
-    },
-    {
-      id: 3,
-      channelName: "channel_2",
-      noOfMessagesInQueue: 34,
-      noOfConsumers: 45,
-      noOfRequests: 15,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 2,
-    },
-    {
-      id: 4,
-      channelName: "channel_7",
-      noOfMessagesInQueue: 45,
-      noOfConsumers: 16,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 0,
-    },
-    {
-      id: 5,
-      channelName: "channel_12",
-      noOfMessagesInQueue: 34,
-      noOfConsumers: 7,
-      noOfRequests: 10,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 0,
-    },
-    {
-      id: 6,
-      channelName: "maths",
-      noOfMessagesInQueue: 1,
-      noOfConsumers: 150,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 1,
-    },
-    {
-      id: 7,
-      channelName: "70",
-      noOfMessagesInQueue: 56,
-      noOfConsumers: 44,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 3,
-    },
-    {
-      id: 8,
-      channelName: "data_87",
-      noOfMessagesInQueue: 232,
-      noOfConsumers: 36,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 0,
-    },
-    {
-      id: 9,
-      channelName: "channel_76",
-      noOfMessagesInQueue: 12,
-      noOfConsumers: 65,
-      noOfRequests: 5,
-      noOfMessagesInPersistence: 2,
-      failedMessages: 1,
-    },
-  ];
   return (
     <div>
       <NavBar />
-      <Box display={"flex"} paddingInline={2} justifyContent={"space-between"}>
-        <DataTable rows={rows} />
+      <Box display={"flex"} paddingInline={2} justifyContent={"space-evenly"}>
+        <DataTable rows={channSumEvents} />
+      </Box>
+      <Box display={"flex"} justifyContent={"space-evenly"} pt={1}>
+        <Paper elevation={3} sx={{ backgroundColor: "#F1F1F1", width:"45vw", display:"flex",justifyContent:"center" }}>
+          <BasicLineChart
+            color={"blue"}
+            name="No of messages"
+            dataset={msgEvents}
+          />
+        </Paper>
         <Box
           display={"flex"}
           flexDirection={"column"}
@@ -152,18 +85,6 @@ export default function Dashboard() {
             dataset={consumerEvents}
           />
         </Box>
-      </Box>
-      <Box display={"flex"} justifyContent={"space-around"} pt={1}>
-        {/* <Paper elevation={3} sx={{backgroundColor:"#F1F1F1"}}>
-          <BasicLineChart color={"blue"} name="No of requests" xAxisData={xAxisData} seriesData={seriesData} />
-        </Paper> */}
-        <Paper elevation={3} sx={{ backgroundColor: "#F1F1F1" }}>
-          <BasicLineChart
-            color={"blue"}
-            name="No of messages"
-            dataset={msgEvents}
-          />
-        </Paper>
       </Box>
     </div>
   );

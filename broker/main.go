@@ -62,7 +62,7 @@ func main() {
 	})
 
 	app.GET("/api/channel/all", func(c echo.Context) error {
-		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, requestCounter, failMsgCounter)
+		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, requestCounter, failMsgCounter, channel)
 	})
 
 	app.GET("/api/consumer/count", func(c echo.Context) error {
