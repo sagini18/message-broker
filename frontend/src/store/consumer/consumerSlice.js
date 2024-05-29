@@ -3,16 +3,16 @@ import { createSlice } from "@reduxjs/toolkit";
 const consumerSlice = createSlice({
   name: "consumer",
   initialState: {
-    connected: false,
+    consumerConnected: false,
     consumerEvents: [],
     eventSourceUrl: null,
   },
   reducers: {
     connectConsumer: (state) => {
-      state.connected = true;
+      state.consumerConnected = true;
     },
     disconnectConsumer: (state) => {
-      state.connected = false;
+      state.consumerConnected = false;
       state.eventSourceUrl = null;
     },
     setConsumerEvents: (state, action) => {

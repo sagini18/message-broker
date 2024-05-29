@@ -47,7 +47,6 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
 	}
 	cc.recordEvent()
-	cc.notifySSE()
 	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
@@ -73,7 +72,6 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 		delete(cc.consumers, channelName)
 	}
 	cc.recordEvent()
-	cc.notifySSE()
 }
 
 func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
@@ -124,6 +122,7 @@ func (cc *InMemoryConsumerCache) recordEvent() {
 		Timestamp: time.Now(),
 		Count:     count,
 	})
+	cc.notifySSE()
 }
 
 func (cc *InMemoryConsumerCache) GetEventCount() []ConsumerEvent {

@@ -1,6 +1,8 @@
 package chart
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -8,10 +10,39 @@ import (
 )
 
 func Request(c echo.Context, requestCounter *channelconsumer.RequestCounter) error {
-	requestEvents := requestCounter.GetEventCount()
-	if len(requestEvents) == 0 {
-		return c.JSON(http.StatusNoContent, nil)
+	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+	c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
+	c.Response().Header().Set(echo.HeaderConnection, "keep-alive")
+
+	flusher, ok := c.Response().Writer.(http.Flusher)
+	if !ok {
+		return c.String(http.StatusInternalServerError, "Streaming unsupported")
 	}
 
-	return c.JSON(http.StatusOK, requestEvents)
+	requestEvents := requestCounter.GetEventCount()
+	data, err := json.Marshal(requestEvents)
+	if err != nil {
+		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
+	flusher.Flush()
+
+	sseChannel := requestCounter.SSEChannel()
+
+	for {
+		select {
+		case <-sseChannel:
+			requestEvents := requestCounter.GetEventCount()
+			data, err := json.Marshal(requestEvents)
+			if err != nil {
+				http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
+				return err
+			}
+			fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
+			flusher.Flush()
+		case <-c.Request().Context().Done():
+			return nil
+		}
+	}
 }

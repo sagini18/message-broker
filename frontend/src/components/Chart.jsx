@@ -3,8 +3,8 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import dayjs from "dayjs";
 
 export default function BasicLineChart({ color, name, dataset }) {
-  const xAxisData = dataset.map((item) => dayjs(item.Timestamp).toDate());
-  const seriesData = dataset.map((item) => item.Count);
+  const xAxisData = dataset?.map((item) => dayjs(item?.Timestamp)?.toDate());
+  const seriesData = dataset?.map((item) => item?.Count);
 
   let previousDate = null;
 
@@ -38,11 +38,16 @@ export default function BasicLineChart({ color, name, dataset }) {
       series={[
         {
           data: seriesData,
-          label: `${name}`,
+          label: dataset?.length > 0 ? name : "",
         },
       ]}
       width={500}
       height={300}
+      slotProps={{
+        legend: {
+          hidden : !(dataset?.length > 0)
+        }
+      }}
     />
   );
 }

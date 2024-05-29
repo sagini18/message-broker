@@ -20,12 +20,14 @@ type RequestCounter struct {
 	mu            sync.RWMutex
 	count         map[string]*atomic.Uint32
 	requestEvents []RequestEvent
+	sseChannel    chan struct{}
 }
 
 func NewRequestCounter() *RequestCounter {
 	return &RequestCounter{
 		count:         make(map[string]*atomic.Uint32),
 		requestEvents: []RequestEvent{},
+		sseChannel:    make(chan struct{}, 1),
 	}
 }
 
@@ -58,6 +60,7 @@ func (rc *RequestCounter) recordEvent() {
 			Timestamp: time.Now(),
 			Count:     1,
 		})
+		rc.notifySSE()
 		return
 	}
 	lastNo := rc.requestEvents[len(rc.requestEvents)-1].Count
@@ -67,13 +70,25 @@ func (rc *RequestCounter) recordEvent() {
 		Count:     lastNo + 1,
 	})
 
+	rc.notifySSE()
 }
 
 func (rc *RequestCounter) GetEventCount() []RequestEvent {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 
-	return append([]RequestEvent(nil), rc.requestEvents...)
+	return append([]RequestEvent{}, rc.requestEvents...)
+}
+
+func (rc *RequestCounter) SSEChannel() <-chan struct{} {
+	return rc.sseChannel
+}
+
+func (rc *RequestCounter) notifySSE() {
+	select {
+	case rc.sseChannel <- struct{}{}:
+	default:
+	}
 }
 
 type FailMsgCounter struct {

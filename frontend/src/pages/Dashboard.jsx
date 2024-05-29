@@ -14,19 +14,23 @@ import {
   startConsumerConnection,
   stopConsumerConnection,
 } from "../store/consumer/sse.Thunks";
+import { startRequestConnection, stopRequestConnection } from "../store/request/sse.Thunks";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { channelEvents } = useSelector((state) => state.channel);
+  const {  channelEvents } = useSelector((state) => state.channel);
   const { consumerEvents } = useSelector((state) => state.consumer);
+  const {requestEvents } = useSelector((state) => state.request);
 
   useEffect(() => {
     dispatch(startChannelConnection());
     dispatch(startConsumerConnection());
+    dispatch(startRequestConnection())
 
     return () => {
       dispatch(stopChannelConnection());
       dispatch(stopConsumerConnection());
+      dispatch(stopRequestConnection())
     };
   }, [dispatch]);
 
@@ -125,7 +129,7 @@ export default function Dashboard() {
           <GraphCard
             name={"No of requests"}
             color={"#5E35B1"}
-            dataset={channelEvents}
+            dataset={requestEvents}
           />
           <GraphCard
             name={"No of channels"}

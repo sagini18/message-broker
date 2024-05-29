@@ -30,7 +30,7 @@ export default function GraphCard({ dataset, name, color }) {
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             <CardContent sx={{ flex: "1 0 auto" }}>
               <Typography component="div" variant="h5" color={"white"}>
-                {dataset.length > 0 ? dataset[dataset.length - 1].Count : 0}
+                {dataset?.length > 0 ? dataset[dataset?.length - 1]?.Count : 0}
               </Typography>
               <Typography
                 variant="subtitle2"
@@ -42,7 +42,7 @@ export default function GraphCard({ dataset, name, color }) {
           </Box>
           {name === "No of channels" ? (
             <BarChartIcon
-            sx={{ color: "white", fontSize: "4rem", pr: "1rem", pt: "1rem" }}
+              sx={{ color: "white", fontSize: "4rem", pr: "1rem", pt: "1rem" }}
             />
           ) : (
             <AutoGraphIcon
@@ -51,7 +51,13 @@ export default function GraphCard({ dataset, name, color }) {
           )}
         </Card>
       </Paper>
-      <CardModel open={open} handleClose={() => setOpen(false)} name={name} color={color} dataset={dataset} />
+      <CardModel
+        open={open}
+        handleClose={() => setOpen(false)}
+        name={name}
+        color={color}
+        dataset={dataset}
+      />
     </>
   );
 }

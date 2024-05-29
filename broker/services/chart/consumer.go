@@ -25,7 +25,6 @@ func Consumer(c echo.Context, consumerStore *channelconsumer.InMemoryConsumerCac
 		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
 		return err
 	}
-	fmt.Println("CONSUMER data sent to frontend***********: ", string(data))
 	fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 	flusher.Flush()
 
@@ -40,7 +39,6 @@ func Consumer(c echo.Context, consumerStore *channelconsumer.InMemoryConsumerCac
 				http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
 				return err
 			}
-			fmt.Println("CONSUMER data sent to frontend***********: ", string(data))
 			fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 			flusher.Flush()
 		case <-c.Request().Context().Done():

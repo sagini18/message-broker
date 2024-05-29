@@ -3,16 +3,16 @@ import { createSlice } from '@reduxjs/toolkit';
 const channelSlice = createSlice({
   name: 'channel',
   initialState: {
-    connected: false,
+    channConnected: false,
     channelEvents: [],
     eventSourceUrl: null,
   },
   reducers: {
     connectChannel: (state) => {
-      state.connected = true;
+      state.channConnected = true;
     },
     disconnectChannel: (state) => {
-      state.connected = false;
+      state.channConnected = false;
       state.eventSourceUrl = null;
     },
     setChannelEvents: (state, action) => {
