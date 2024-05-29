@@ -15,15 +15,15 @@ export const startRequestConnection = createAsyncThunk(
     if (request.connected) {
       return;
     }
-    const CONSUMER_EVENT_SOURCE_KEY = 'request';
-    const CONSUMER_EVENT_SOURCE_URL = "http://localhost:8080/api/request/count";
+    const REQ_EVENT_SOURCE_KEY = 'request';
+    const REQ_EVENT_SOURCE_URL = "http://localhost:8080/api/request/count";
 
     startEventSource(
-      CONSUMER_EVENT_SOURCE_KEY,
-      CONSUMER_EVENT_SOURCE_URL,
+      REQ_EVENT_SOURCE_KEY,
+      REQ_EVENT_SOURCE_URL,
       () => {
         dispatch(connectRequest());
-        dispatch(setEventSourceUrl(CONSUMER_EVENT_SOURCE_URL));
+        dispatch(setEventSourceUrl(REQ_EVENT_SOURCE_URL));
       },
       (event) => {
         const data = JSON.parse(event.data);

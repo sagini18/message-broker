@@ -23,6 +23,7 @@ export default function BasicLineChart({ color, name, dataset }) {
   return (
     <LineChart
       colors={[color]}
+      margin={{ top: 50, right: 50, left: 75, bottom: 40 }}
       xAxis={[
         {
           scaleType: "point",
@@ -41,7 +42,7 @@ export default function BasicLineChart({ color, name, dataset }) {
           label: dataset?.length > 0 ? name : "",
         },
       ]}
-      width={500}
+      width={560}
       height={300}
       slotProps={{
         legend: {

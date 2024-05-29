@@ -43,7 +43,7 @@ export default function CardModel({ open, handleClose, name, color , dataset}) {
           }}>
           <CloseIcon />
         </IconButton>
-        <DialogContent dividers>
+        <DialogContent dividers >
           {name === "No of channels" ? (
             <BasicBarChart color={color} dataset={dataset} />
           ) : (

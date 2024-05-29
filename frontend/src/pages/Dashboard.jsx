@@ -14,23 +14,33 @@ import {
   startConsumerConnection,
   stopConsumerConnection,
 } from "../store/consumer/sse.Thunks";
-import { startRequestConnection, stopRequestConnection } from "../store/request/sse.Thunks";
+import {
+  startRequestConnection,
+  stopRequestConnection,
+} from "../store/request/sse.Thunks";
+import {
+  startMsgConnection,
+  stopMsgConnection,
+} from "../store/message/sse.Thunks";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const {  channelEvents } = useSelector((state) => state.channel);
+  const { channelEvents } = useSelector((state) => state.channel);
   const { consumerEvents } = useSelector((state) => state.consumer);
-  const {requestEvents } = useSelector((state) => state.request);
+  const { requestEvents } = useSelector((state) => state.request);
+  const { msgEvents } = useSelector((state) => state.message);
 
   useEffect(() => {
     dispatch(startChannelConnection());
     dispatch(startConsumerConnection());
-    dispatch(startRequestConnection())
+    dispatch(startRequestConnection());
+    dispatch(startMsgConnection());
 
     return () => {
       dispatch(stopChannelConnection());
       dispatch(stopConsumerConnection());
-      dispatch(stopRequestConnection())
+      dispatch(stopRequestConnection());
+      dispatch(stopMsgConnection());
     };
   }, [dispatch]);
 
@@ -151,7 +161,7 @@ export default function Dashboard() {
           <BasicLineChart
             color={"blue"}
             name="No of messages"
-            dataset={channelEvents}
+            dataset={msgEvents}
           />
         </Paper>
       </Box>
