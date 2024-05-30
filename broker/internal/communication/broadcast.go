@@ -1,6 +1,7 @@
 package communication
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
+	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +32,7 @@ import (
 *   - error: Returns an error if there is any issue during the process, otherwise returns nil.
  */
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, persist persistence.Persistence, file *os.File, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, database *sql.DB, sqlite sqlite.Persistence) error {
 	channelName := context.Param("id")
 	requestCount.Add(channelName)
 
@@ -49,6 +51,9 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	go func() {
 		if err := persist.Write(jsonBody, file); err != nil {
 			logrus.Errorf("communication.Broadcast(): persistence.Write() error: %v", err)
+		}
+		if err := sqlite.Write(*message, database); err != nil {
+			logrus.Errorf("communication.Broadcast(): persistence.WriteToDB() error: %v", err)
 		}
 	}()
 

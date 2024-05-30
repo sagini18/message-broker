@@ -1,0 +1,5 @@
+-- CREATE TABLE IF NOT EXISTS channel_events (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     count INTEGER,
+--     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+-- );

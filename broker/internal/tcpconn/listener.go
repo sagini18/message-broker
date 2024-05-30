@@ -2,6 +2,7 @@ package tcpconn
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -10,10 +11,11 @@ import (
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
+	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence, file *os.File, channel channelconsumer.ChannelStorage) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, persist persistence.Persistence, file *os.File, channel channelconsumer.ChannelStorage, sqlite sqlite.Persistence, database *sql.DB) error {
 	defer connection.Close()
 
 	for {
@@ -52,6 +54,9 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 			go func() {
 				if err := persist.Remove(msg.ID, file); err != nil {
 					logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.Remove() error: %v", err)
+				}
+				if err := sqlite.Remove(msg.ID, database); err != nil {
+					logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.RemoveFromDB() error: %v", err)
 				}
 			}()
 			messageQueue.Remove(msg.ID, msg.ChannelName)

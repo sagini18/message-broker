@@ -2,6 +2,7 @@ package communication
 
 import (
 	"bytes"
+	"database/sql"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/persistence"
+	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -74,17 +76,22 @@ func TestBroadcast(t *testing.T) {
 	requestCounter := &channelconsumer.RequestCounter{}
 	failMsgCount := &channelconsumer.FailMsgCounter{}
 	channel := channelconsumer.NewChannel()
+	sqlite := sqlite.New()
+
+	database, _ := sql.Open("sqlite3", "../../sqlite/msgbroker.db")
+	defer database.Close()
+
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FilePath = "./internal/persistence/persisted_messages.txt"
+		config.FILEPATH = "../internal/persistence/persisted_messages.txt"
 	}
-	file, err := os.OpenFile(config.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(config.FILEPATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Error("Error in opening file: ", err)
 	}
 	defer file.Close()
 
-	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel)
+	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel, database, sqlite)
 
 	assert.Nil(t, err)
 
@@ -117,11 +124,16 @@ func BenchmarkBroadcast(b *testing.B) {
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCount := channelconsumer.NewFailMsgCounter()
 	channel := channelconsumer.NewChannel()
+	sqlite := sqlite.New()
+
+	database, _ := sql.Open("sqlite3", "../../sqlite/msgbroker.db")
+	defer database.Close()
+
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FilePath = "./internal/persistence/persisted_messages.txt"
+		config.FILEPATH = "../internal/persistence/persisted_messages.txt"
 	}
-	file, err := os.OpenFile(config.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(config.FILEPATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Error("Error in opening file: ", err)
 	}
@@ -129,7 +141,7 @@ func BenchmarkBroadcast(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel, database, sqlite)
 		assert.Nil(b, err)
 	}
 }
