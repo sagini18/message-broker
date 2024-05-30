@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
@@ -19,22 +17,18 @@ type TCPServer struct {
 	messageQueue        channelconsumer.MessageStorage
 	consumerIdGenerator channelconsumer.IdGenerator
 	messageIdGenerator  channelconsumer.IdGenerator
-	persist             persistence.Persistence
-	file                *os.File
 	channel             channelconsumer.ChannelStorage
 	database            *sql.DB
 	sqlite              sqlite.Persistence
 }
 
-func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, persist persistence.Persistence, file *os.File, channel channelconsumer.ChannelStorage, database *sql.DB, sqlite sqlite.Persistence) *TCPServer {
+func New(addr string, store channelconsumer.Storage, msgStore channelconsumer.MessageStorage, consumerIdGenerator channelconsumer.IdGenerator, messageIdGenerator channelconsumer.IdGenerator, channel channelconsumer.ChannelStorage, database *sql.DB, sqlite sqlite.Persistence) *TCPServer {
 	return &TCPServer{
 		addr:                addr,
 		consumerStore:       store,
 		messageQueue:        msgStore,
 		consumerIdGenerator: consumerIdGenerator,
 		messageIdGenerator:  messageIdGenerator,
-		persist:             persist,
-		file:                file,
 		channel:             channel,
 		database:            database,
 		sqlite:              sqlite,
@@ -62,12 +56,12 @@ func (t *TCPServer) Listen() error {
 				return
 			}
 
-			count := sendPersistedData(channel, conn, t.persist, t.file, t.sqlite, t.database)
+			count := sendPersistedData(channel, conn, t.sqlite, t.database)
 			if count == 0 {
 				t.messageQueue.SendPendingMessages(channel, conn)
 			}
 
-			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.persist, t.file, t.channel, t.sqlite, t.database); err != nil {
+			if err := listenToConsumerMessages(conn, consumer, t.consumerStore, t.messageQueue, t.channel, t.sqlite, t.database); err != nil {
 				logrus.Errorf("tcpserver.Listen():  %v", err)
 			}
 		}()
@@ -108,23 +102,17 @@ func (t *TCPServer) handleNewClientConnection(connection net.Conn) (string, *cha
 	return channel, consumer, nil
 }
 
-func sendPersistedData(channel string, connection net.Conn, persist persistence.Persistence, file *os.File, sqlite sqlite.Persistence, database *sql.DB) int {
-	data, err := sqlite.Read(channel, database)
-	if err != nil {
-		logrus.Errorf("tcpserver.Listen().sendPersistedData(): %v", err)
-	}
-	fmt.Println("Data from sqlite: ", data)
-
-	fileData, err := persist.Read(channel, file)
+func sendPersistedData(channel string, connection net.Conn, sqlite sqlite.Persistence, database *sql.DB) int {
+	dbData, err := sqlite.Read(channel, database)
 	if err != nil {
 		logrus.Errorf("tcpserver.Listen().sendPersistedData(): %v", err)
 	}
 
-	if len(fileData) == 0 {
+	if len(dbData) == 0 {
 		return 0
 	}
 
-	messageBytes, err := json.Marshal(fileData)
+	messageBytes, err := json.Marshal(dbData)
 	if err != nil {
 		logrus.Errorf("tcpserver.Listen().sendPersistedData(): json.Marshal error: %v", err)
 
@@ -133,6 +121,6 @@ func sendPersistedData(channel string, connection net.Conn, persist persistence.
 	if _, err = connection.Write(messageBytes); err != nil {
 		logrus.Errorf("tcpserver.Listen().sendPersistedData(): writing error: %v", err)
 	}
-	logrus.Info("Sent persisted data to consumer: ", fileData)
-	return len(fileData)
+	logrus.Info("Sent persisted data to consumer: ", dbData)
+	return len(dbData)
 }

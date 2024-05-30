@@ -5,16 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
 
-func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, sqlite sqlite.Persistence, database *sql.DB) error {
+func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, sqlite sqlite.Persistence, database *sql.DB) error {
 	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
 	c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
 	c.Response().Header().Set(echo.HeaderConnection, "keep-alive")
@@ -25,7 +23,7 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 	}
 
 	sendResponse := func() {
-		response := channelSummaryResponse(messageQueue, consumerStorage, persist, file, requestCounter, failMsgCount, sqlite, database)
+		response := channelSummaryResponse(messageQueue, consumerStorage, requestCounter, failMsgCount, sqlite, database)
 		data, err := json.Marshal(response)
 		if err != nil {
 			http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
@@ -58,26 +56,21 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 
 }
 
-func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, sqlite sqlite.Persistence, database *sql.DB) []map[string]interface{} {
+func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, sqlite sqlite.Persistence, database *sql.DB) []map[string]interface{} {
 	messages := messageQueue.GetAll()
 	consumers := consumerStorage.GetAll()
-	persistMessages, err := persist.ReadAll(file)
-	if err != nil {
-		logrus.Error("ChannelDetails(): error reading from persistence file: ", err)
-	}
 	dbmsgs, err := sqlite.ReadAll(database)
 	if err != nil {
 		logrus.Error("ChannelDetails(): error reading from persistence db: ", err)
 	}
-	fmt.Println("dbmsgs: ", dbmsgs)
 	failedChannels := failMsgCount.GetAllChannel()
 
-	if len(messages) == 0 && len(consumers) == 0 && len(persistMessages) == 0 && len(failedChannels) == 0 {
+	if len(messages) == 0 && len(consumers) == 0 && len(dbmsgs) == 0 && len(failedChannels) == 0 {
 		return []map[string]interface{}{}
 	}
 
-	if len(persistMessages) > len(messages) {
-		messages = persistMessages
+	if len(dbmsgs) > len(messages) {
+		messages = dbmsgs
 	}
 
 	channelSet := make(map[string]struct{})
@@ -94,15 +87,13 @@ func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, 
 	response := make([]map[string]interface{}, 0, len(channelSet))
 	id := 1
 	for channelName := range channelSet {
-		count := sqlite.ReadCount(channelName, database)
-		fmt.Println("Count: ", count)
 		channelInfo := map[string]interface{}{
 			"id":                        id,
 			"channelName":               channelName,
 			"noOfMessagesInQueue":       messageQueue.GetCount(channelName),
 			"noOfConsumers":             len(consumers[channelName]),
 			"noOfRequests":              requestCounter.Get(channelName),
-			"noOfMessagesInPersistence": persist.ReadCount(channelName, file),
+			"noOfMessagesInPersistence": sqlite.ReadCount(channelName, database),
 			"failedMessages":            failMsgCount.Get(channelName),
 		}
 		response = append(response, channelInfo)

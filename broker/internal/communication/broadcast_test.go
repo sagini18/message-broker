@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,9 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/sqlite"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,26 +69,19 @@ func TestBroadcast(t *testing.T) {
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: ConnSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
-	persist := persistence.New()
 	requestCounter := &channelconsumer.RequestCounter{}
 	failMsgCount := &channelconsumer.FailMsgCounter{}
 	channel := channelconsumer.NewChannel()
 	sqlite := sqlite.New()
 
-	database, _ := sql.Open("sqlite3", "../../sqlite/msgbroker.db")
-	defer database.Close()
-
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FILEPATH = "../internal/persistence/persisted_messages.txt"
+		config.DBPATH = "../../sqlite/msgbroker.db"
 	}
-	file, err := os.OpenFile(config.FILEPATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		logrus.Error("Error in opening file: ", err)
-	}
-	defer file.Close()
+	database, _ := sql.Open("sqlite3", config.DBPATH)
+	defer database.Close()
 
-	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel, database, sqlite)
+	err = Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCount, channel, database, sqlite)
 
 	assert.Nil(t, err)
 
@@ -120,28 +110,21 @@ func BenchmarkBroadcast(b *testing.B) {
 	consumerStorage.Add(&channelconsumer.Consumer{Id: 1, SubscribedChannel: "123", TcpConn: connSpy})
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
-	persist := persistence.New()
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCount := channelconsumer.NewFailMsgCounter()
 	channel := channelconsumer.NewChannel()
 	sqlite := sqlite.New()
 
-	database, _ := sql.Open("sqlite3", "../../sqlite/msgbroker.db")
-	defer database.Close()
-
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FILEPATH = "../internal/persistence/persisted_messages.txt"
+		config.DBPATH = "../../sqlite/msgbroker.db"
 	}
-	file, err := os.OpenFile(config.FILEPATH, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		logrus.Error("Error in opening file: ", err)
-	}
-	defer file.Close()
+	database, _ := sql.Open("sqlite3", config.DBPATH)
+	defer database.Close()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCount, channel, database, sqlite)
+		err := Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCount, channel, database, sqlite)
 		assert.Nil(b, err)
 	}
 }

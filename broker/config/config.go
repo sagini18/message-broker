@@ -6,8 +6,7 @@ import (
 )
 
 type Config struct {
-	FILEPATH string
-	DBPATH   string
+	DBPATH string
 }
 
 func LoadConfig() (Config, error) {

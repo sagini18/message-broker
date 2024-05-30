@@ -1,4 +1,3 @@
 {
-  "FILEPATH": "./internal/persistence/persisted_messages.txt",
   "DBPATH": "./sqlite/msgbroker.db"
 }

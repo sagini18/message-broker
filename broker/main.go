@@ -12,7 +12,6 @@ import (
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
 	"github.com/sagini18/message-broker/broker/services/chart"
 	"github.com/sagini18/message-broker/broker/services/table"
@@ -29,15 +28,8 @@ func main() {
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FILEPATH = "./internal/persistence/persisted_messages.txt"
 		config.DBPATH = "./sqlite/msgbroker.db"
 	}
-
-	file, err := os.OpenFile(config.FILEPATH, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-	if err != nil {
-		logrus.Error("Error in opening file: ", err)
-	}
-	defer file.Close()
 
 	database := initDB(config.DBPATH)
 	defer database.Close()
@@ -46,12 +38,11 @@ func main() {
 	messageQueue := channelconsumer.NewInMemoryMessageQueue()
 	consumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	messageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	persist := persistence.New()
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCounter := channelconsumer.NewFailMsgCounter()
 	channel := channelconsumer.NewChannel()
 	sqlite := sqlite.New()
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, persist, file, channel, database, sqlite)
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, channel, database, sqlite)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
@@ -67,11 +58,11 @@ func main() {
 	}))
 
 	app.POST("/api/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, persist, file, requestCounter, failMsgCounter, channel, database, sqlite)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
 	})
 
 	app.GET("/api/channel/all", func(c echo.Context) error {
-		return table.ChannelDetails(c, messageQueue, consumerStorage, persist, file, requestCounter, failMsgCounter, channel, sqlite, database)
+		return table.ChannelDetails(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
 	})
 
 	app.GET("/api/consumer/count", func(c echo.Context) error {
