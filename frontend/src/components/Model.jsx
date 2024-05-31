@@ -8,21 +8,17 @@ import CloseIcon from "@mui/icons-material/Close";
 import BasicBarChart from "./BarChart";
 import BasicLineChart from "./Chart";
 
-const BootstrapDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiDialogContent-root": {
-    padding: theme.spacing(2),
-  },
-  "& .MuiDialogActions-root": {
-    padding: theme.spacing(1),
-  },
-}));
 
 export default function CardModel({ open, handleClose, name, color , dataset}) {
-
-
-  const xAxisData = [1, 2, 3, 5, 8, 10, 12];
-  const seriesData = [2, 5.5, 2, 8.5, 1.5, 5, 9];
-
+  const BootstrapDialog = styled(Dialog)(({ theme }) => ({
+    "& .MuiDialogContent-root": {
+      padding: theme.spacing(2),
+    },
+    "& .MuiDialogActions-root": {
+      padding: theme.spacing(1),
+    },
+  }));
+  
   return (
     <React.Fragment>
       <BootstrapDialog

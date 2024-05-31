@@ -4,7 +4,7 @@ import DataTable from "../components/Table";
 import BasicLineChart from "../components/Chart";
 import { Box, Paper } from "@mui/material";
 import GraphCard from "../components/Card";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   startChannelConnection,
@@ -50,6 +50,10 @@ export default function Dashboard() {
       dispatch(stopChannSumConnection());
     };
   }, [dispatch]);
+
+  console.log("channelEvents :", channelEvents);
+  console.log("requestEvents :", requestEvents);
+  console.log("msgEvents :", msgEvents);
 
   return (
     <div>

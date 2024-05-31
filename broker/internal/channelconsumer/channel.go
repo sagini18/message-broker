@@ -20,12 +20,14 @@ type Channel struct {
 	mu           sync.Mutex
 	channelEvent []ChannelEvent
 	sseChannel   chan struct{}
+	sseChannSum  chan struct{}
 }
 
 func NewChannel() *Channel {
 	return &Channel{
 		channelEvent: []ChannelEvent{},
 		sseChannel:   make(chan struct{}, 1),
+		sseChannSum:  make(chan struct{}, 1),
 	}
 }
 
@@ -79,9 +81,17 @@ func (c *Channel) SSEChannel() <-chan struct{} {
 	return c.sseChannel
 }
 
+func (c *Channel) SSEChannelSummary() <-chan struct{} {
+	return c.sseChannSum
+}
+
 func (c *Channel) notifySSE() {
 	select {
 	case c.sseChannel <- struct{}{}:
+	default:
+	}
+	select {
+	case c.sseChannSum <- struct{}{}:
 	default:
 	}
 }

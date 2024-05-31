@@ -35,18 +35,22 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 
 	sendResponse()
 
-	sseChannel := channel.SSEChannel()
-	sseMessage := messageQueue.SSEChannel()
-	sseConsumer := consumerStorage.SSEChannel()
-	sseRequestCounter := requestCounter.SSEChannel()
-	sseFailMsgCount := failMsgCount.SSEChannel()
+	sseChannel := channel.SSEChannelSummary()
+	sseMessage := messageQueue.SSEChannelSummary()
+	sseConsumer := consumerStorage.SSEChannelSummary()
+	sseRequestCounter := requestCounter.SSEChannelSummary()
+	sseFailMsgCount := failMsgCount.SSEChannelSummary()
 
 	for {
 		select {
 		case <-sseChannel:
+			sendResponse()
 		case <-sseMessage:
+			sendResponse()
 		case <-sseConsumer:
+			sendResponse()
 		case <-sseRequestCounter:
+			sendResponse()
 		case <-sseFailMsgCount:
 			sendResponse()
 		case <-c.Request().Context().Done():

@@ -29,6 +29,7 @@ type InMemoryMessageCache struct {
 	messages      map[string][]Message
 	messageEvents []MessageEvent
 	sseChannel    chan struct{}
+	sseChannSum   chan struct{}
 }
 
 func NewInMemoryMessageQueue() *InMemoryMessageCache {
@@ -36,6 +37,7 @@ func NewInMemoryMessageQueue() *InMemoryMessageCache {
 		messages:      make(map[string][]Message),
 		messageEvents: []MessageEvent{},
 		sseChannel:    make(chan struct{}, 1),
+		sseChannSum:   make(chan struct{}, 1),
 	}
 }
 
@@ -152,8 +154,16 @@ func (mc *InMemoryMessageCache) notifySSE() {
 	case mc.sseChannel <- struct{}{}:
 	default:
 	}
+	select {
+	case mc.sseChannSum <- struct{}{}:
+	default:
+	}
 }
 
 func (mc *InMemoryMessageCache) SSEChannel() <-chan struct{} {
 	return mc.sseChannel
+}
+
+func (mc *InMemoryMessageCache) SSEChannelSummary() <-chan struct{} {
+	return mc.sseChannSum
 }

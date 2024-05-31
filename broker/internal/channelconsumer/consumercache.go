@@ -26,6 +26,7 @@ type InMemoryConsumerCache struct {
 	consumers      map[string][]Consumer
 	consumerEvents []ConsumerEvent
 	sseChannel     chan struct{}
+	sseChannSum    chan struct{}
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
@@ -33,6 +34,7 @@ func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 		consumers:      make(map[string][]Consumer),
 		consumerEvents: []ConsumerEvent{},
 		sseChannel:     make(chan struct{}, 1),
+		sseChannSum:    make(chan struct{}, 1),
 	}
 }
 
@@ -137,8 +139,16 @@ func (cc *InMemoryConsumerCache) notifySSE() {
 	case cc.sseChannel <- struct{}{}:
 	default:
 	}
+	select {
+	case cc.sseChannSum <- struct{}{}:
+	default:
+	}
 }
 
 func (cc *InMemoryConsumerCache) SSEChannel() <-chan struct{} {
 	return cc.sseChannel
+}
+
+func (cc *InMemoryConsumerCache) SSEChannelSummary() <-chan struct{} {
+	return cc.sseChannSum
 }

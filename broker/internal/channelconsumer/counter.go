@@ -21,6 +21,7 @@ type RequestCounter struct {
 	count         map[string]*atomic.Uint32
 	requestEvents []RequestEvent
 	sseChannel    chan struct{}
+	sseChannSum   chan struct{}
 }
 
 func NewRequestCounter() *RequestCounter {
@@ -28,6 +29,7 @@ func NewRequestCounter() *RequestCounter {
 		count:         make(map[string]*atomic.Uint32),
 		requestEvents: []RequestEvent{},
 		sseChannel:    make(chan struct{}, 1),
+		sseChannSum:   make(chan struct{}, 1),
 	}
 }
 
@@ -84,23 +86,33 @@ func (rc *RequestCounter) SSEChannel() <-chan struct{} {
 	return rc.sseChannel
 }
 
+func (rc *RequestCounter) SSEChannelSummary() <-chan struct{} {
+	return rc.sseChannSum
+}
+
 func (rc *RequestCounter) notifySSE() {
 	select {
 	case rc.sseChannel <- struct{}{}:
 	default:
 	}
+	select {
+	case rc.sseChannSum <- struct{}{}:
+	default:
+	}
 }
 
 type FailMsgCounter struct {
-	mu         sync.RWMutex
-	count      map[string]*atomic.Uint32
-	sseChannel chan struct{}
+	mu          sync.RWMutex
+	count       map[string]*atomic.Uint32
+	sseChannel  chan struct{}
+	sseChannSum chan struct{}
 }
 
 func NewFailMsgCounter() *FailMsgCounter {
 	return &FailMsgCounter{
-		count:      make(map[string]*atomic.Uint32),
-		sseChannel: make(chan struct{}, 1),
+		count:       make(map[string]*atomic.Uint32),
+		sseChannel:  make(chan struct{}, 1),
+		sseChannSum: make(chan struct{}, 1),
 	}
 }
 
@@ -138,9 +150,17 @@ func (f *FailMsgCounter) SSEChannel() <-chan struct{} {
 	return f.sseChannel
 }
 
+func (f *FailMsgCounter) SSEChannelSummary() <-chan struct{} {
+	return f.sseChannSum
+}
+
 func (f *FailMsgCounter) notifySSE() {
 	select {
 	case f.sseChannel <- struct{}{}:
+	default:
+	}
+	select {
+	case f.sseChannSum <- struct{}{}:
 	default:
 	}
 }

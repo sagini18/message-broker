@@ -3,3 +3,5 @@
 --     count INTEGER,
 --     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 -- );
+
+DROP TABLE IF EXISTS message;

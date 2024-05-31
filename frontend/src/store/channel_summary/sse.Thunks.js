@@ -23,7 +23,6 @@ export const startChannSumConnection = createAsyncThunk(
         dispatch(setEventSourceUrl(CHANN_SUM_EVENT_SOURCE_URL));
       },
       (event) => {
-          console.log("`data in channSum/startChannSumConnection:*********** ", event.data);
         const data = JSON.parse(event.data);
         dispatch(setChannSumEvents(data));
       },
