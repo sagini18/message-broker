@@ -6,6 +6,11 @@ import {
   setEventSourceUrl,
 } from "./channelSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
+import { dynamicRateLimiter } from '../../utils/dynamicRateLimiter.js';
+
+const handleChannelEvents = (dispatch, data) => {
+  dispatch(setChannelEvents(data));
+};
 
 export const startChannelConnection = createAsyncThunk(
   "channel/startChannelConnection",
@@ -29,7 +34,9 @@ export const startChannelConnection = createAsyncThunk(
       },
       (event) => {
         const data = JSON.parse(event.data);
-        dispatch(setChannelEvents(data));
+        const load = data.length;  // Assuming data length can be used as a proxy for load
+        const handleEvents = dynamicRateLimiter(handleChannelEvents, load);
+        handleEvents(dispatch, data);
       },
       () => {
         dispatch(disconnectChannel());

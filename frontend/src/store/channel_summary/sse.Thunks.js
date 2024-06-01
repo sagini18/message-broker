@@ -1,6 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { connectChannSum, disconnectChannSum, setChannSumEvents, setEventSourceUrl } from "./channSumSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
+import { dynamicRateLimiter } from '../../utils/dynamicRateLimiter.js';
+
+const handleChannSumEvents = (dispatch, data) => {
+  dispatch(setChannSumEvents(data));
+};
+
 
 export const startChannSumConnection = createAsyncThunk(
   "channSum/startChannSumConnection",
@@ -24,7 +30,9 @@ export const startChannSumConnection = createAsyncThunk(
       },
       (event) => {
         const data = JSON.parse(event.data);
-        dispatch(setChannSumEvents(data));
+        const load = data.length;
+        const handleEvents = dynamicRateLimiter(handleChannSumEvents, load);
+        handleEvents(dispatch, data);
       },
       () => {
         dispatch(disconnectChannSum());

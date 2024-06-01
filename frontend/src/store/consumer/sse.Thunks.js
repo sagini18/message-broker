@@ -6,6 +6,11 @@ import {
   setEventSourceUrl,
 } from "../consumer/consumerSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
+import { dynamicRateLimiter } from '../../utils/dynamicRateLimiter.js';
+
+const handleConsumerEvents = (dispatch, data) => {
+  dispatch(setConsumerEvents(data));
+};
 
 export const startConsumerConnection = createAsyncThunk(
   "consumer/startConsumerConnection",
@@ -27,7 +32,9 @@ export const startConsumerConnection = createAsyncThunk(
       },
       (event) => {
         const data = JSON.parse(event.data);
-        dispatch(setConsumerEvents(data));
+        const load = data.length;
+        const handleEvents = dynamicRateLimiter(handleConsumerEvents, load);
+        handleEvents(dispatch, data);
       },
       () => {
         dispatch(disconnectConsumer());

@@ -6,6 +6,12 @@ import {
   setEventSourceUrl,
 } from "../message/messageSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
+import { dynamicRateLimiter } from '../../utils/dynamicRateLimiter.js';
+
+const handleMsgEvents = (dispatch, data) => {
+  dispatch(setMsgEvents(data));
+};
+
 
 export const startMsgConnection = createAsyncThunk(
   "message/startMsgConnection",
@@ -27,7 +33,9 @@ export const startMsgConnection = createAsyncThunk(
       },
       (event) => {
         const data = JSON.parse(event.data);
-        dispatch(setMsgEvents(data));
+        const load = data.length;  // Assuming data length can be used as a proxy for load
+        const handleEvents = dynamicRateLimiter(handleMsgEvents, load);
+        handleEvents(dispatch, data);
       },
       () => {
         dispatch(disconnectMsg());

@@ -51,10 +51,6 @@ export default function Dashboard() {
     };
   }, [dispatch]);
 
-  console.log("channelEvents :", channelEvents);
-  console.log("requestEvents :", requestEvents);
-  console.log("msgEvents :", msgEvents);
-
   return (
     <div>
       <NavBar />

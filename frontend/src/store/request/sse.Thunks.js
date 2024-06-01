@@ -6,6 +6,12 @@ import {
   setEventSourceUrl,
 } from "../request/requestSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
+import { dynamicRateLimiter } from '../../utils/dynamicRateLimiter.js';
+
+const handleRequestEvents = (dispatch, data) => {
+  dispatch(setRequestEvents(data));
+};
+
 
 export const startRequestConnection = createAsyncThunk(
   "request/startRequestConnection",
@@ -27,7 +33,9 @@ export const startRequestConnection = createAsyncThunk(
       },
       (event) => {
         const data = JSON.parse(event.data);
-        dispatch(setRequestEvents(data));
+        const load = data.length;  // Assuming data length can be used as a proxy for load
+        const handleEvents = dynamicRateLimiter(handleRequestEvents, load);
+        handleEvents(dispatch, data);
       },
       () => {
         dispatch(disconnectRequest());
