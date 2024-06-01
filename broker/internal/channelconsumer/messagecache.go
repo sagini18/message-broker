@@ -28,12 +28,16 @@ type InMemoryMessageCache struct {
 	mu            sync.RWMutex
 	messages      map[string][]Message
 	messageEvents []MessageEvent
+	sseChannel    chan struct{}
+	sseChannSum   chan struct{}
 }
 
 func NewInMemoryMessageQueue() *InMemoryMessageCache {
 	return &InMemoryMessageCache{
 		messages:      make(map[string][]Message),
 		messageEvents: []MessageEvent{},
+		sseChannel:    make(chan struct{}, 1),
+		sseChannSum:   make(chan struct{}, 1),
 	}
 }
 
@@ -134,11 +138,32 @@ func (mc *InMemoryMessageCache) recordEvent() {
 		Timestamp: time.Now(),
 		Count:     count,
 	})
+
+	mc.notifySSE()
 }
 
 func (mc *InMemoryMessageCache) GetEventCount() []MessageEvent {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
 
-	return append([]MessageEvent(nil), mc.messageEvents...)
+	return append([]MessageEvent{}, mc.messageEvents...)
+}
+
+func (mc *InMemoryMessageCache) notifySSE() {
+	select {
+	case mc.sseChannel <- struct{}{}:
+	default:
+	}
+	select {
+	case mc.sseChannSum <- struct{}{}:
+	default:
+	}
+}
+
+func (mc *InMemoryMessageCache) SSEChannel() <-chan struct{} {
+	return mc.sseChannel
+}
+
+func (mc *InMemoryMessageCache) SSEChannelSummary() <-chan struct{} {
+	return mc.sseChannSum
 }

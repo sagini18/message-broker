@@ -1,6 +1,4 @@
 import React from "react";
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { styled } from "@mui/material/styles";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -9,28 +7,18 @@ import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import BasicBarChart from "./BarChart";
 import BasicLineChart from "./Chart";
-import { startSSEConnection } from "../store/sse.Thunks";
 
-const BootstrapDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiDialogContent-root": {
-    padding: theme.spacing(2),
-  },
-  "& .MuiDialogActions-root": {
-    padding: theme.spacing(1),
-  },
-}));
 
-export default function CardModel({ open, handleClose, name, color }) {
-  const dispatch = useDispatch();
-  const { connected, events } = useSelector((state) => state.channel);
-
-  useEffect(() => {
-    dispatch(startSSEConnection());
-  }, [dispatch]);
-
-  const xAxisData = [1, 2, 3, 5, 8, 10, 12];
-  const seriesData = [2, 5.5, 2, 8.5, 1.5, 5, 9];
-
+export default function CardModel({ open, handleClose, name, color , dataset}) {
+  const BootstrapDialog = styled(Dialog)(({ theme }) => ({
+    "& .MuiDialogContent-root": {
+      padding: theme.spacing(2),
+    },
+    "& .MuiDialogActions-root": {
+      padding: theme.spacing(1),
+    },
+  }));
+  
   return (
     <React.Fragment>
       <BootstrapDialog
@@ -51,15 +39,14 @@ export default function CardModel({ open, handleClose, name, color }) {
           }}>
           <CloseIcon />
         </IconButton>
-        <DialogContent dividers>
+        <DialogContent dividers >
           {name === "No of channels" ? (
-            <BasicBarChart color={color} dataset={events} />
+            <BasicBarChart color={color} dataset={dataset} />
           ) : (
             <BasicLineChart
               color={color}
               name={name}
-              xAxisData={xAxisData}
-              seriesData={seriesData}
+              dataset={dataset}
             />
           )}
         </DialogContent>

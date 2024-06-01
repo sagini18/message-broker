@@ -23,12 +23,11 @@ export default function BasicBarChart({ color, dataset }) {
     previousDate = currentDate;
     return formattedTimestamp;
   };
-  
+
   const chartSetting = {
     yAxis: [
       {
         label: "no of channels",
-        max: Math.max(...dataset.map((data) => data.Count)) + 1,
       },
     ],
     series: [{ dataKey: "Count", valueFormatter }],
@@ -40,8 +39,6 @@ export default function BasicBarChart({ color, dataset }) {
       },
     },
   };
-
-  console.log("dataset : ", dataset);
 
   return (
     <div style={{ width: "100%" }}>

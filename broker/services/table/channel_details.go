@@ -1,30 +1,80 @@
 package table
 
 import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
+	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
 
-func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, persist persistence.Persistence, file *os.File, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter) error {
+func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, sqlite sqlite.Persistence, database *sql.DB) error {
+	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+	c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
+	c.Response().Header().Set(echo.HeaderConnection, "keep-alive")
+
+	flusher, ok := c.Response().Writer.(http.Flusher)
+	if !ok {
+		return c.String(http.StatusInternalServerError, "Streaming unsupported")
+	}
+
+	sendResponse := func() {
+		response := channelSummaryResponse(messageQueue, consumerStorage, requestCounter, failMsgCount, sqlite, database)
+		data, err := json.Marshal(response)
+		if err != nil {
+			http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
+		flusher.Flush()
+	}
+
+	sendResponse()
+
+	sseChannel := channel.SSEChannelSummary()
+	sseMessage := messageQueue.SSEChannelSummary()
+	sseConsumer := consumerStorage.SSEChannelSummary()
+	sseRequestCounter := requestCounter.SSEChannelSummary()
+	sseFailMsgCount := failMsgCount.SSEChannelSummary()
+
+	for {
+		select {
+		case <-sseChannel:
+			sendResponse()
+		case <-sseMessage:
+			sendResponse()
+		case <-sseConsumer:
+			sendResponse()
+		case <-sseRequestCounter:
+			sendResponse()
+		case <-sseFailMsgCount:
+			sendResponse()
+		case <-c.Request().Context().Done():
+			return nil
+		}
+	}
+
+}
+
+func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, sqlite sqlite.Persistence, database *sql.DB) []map[string]interface{} {
 	messages := messageQueue.GetAll()
 	consumers := consumerStorage.GetAll()
-	persistMessages, err := persist.ReadAll(file)
+	dbmsgs, err := sqlite.ReadAll(database)
 	if err != nil {
-		logrus.Error("ChannelDetails(): error reading from persistence file: ", err)
+		logrus.Error("ChannelDetails(): error reading from persistence db: ", err)
 	}
 	failedChannels := failMsgCount.GetAllChannel()
 
-	if len(messages) == 0 && len(consumers) == 0 && len(persistMessages) == 0 && len(failedChannels) == 0 {
-		return c.JSON(http.StatusNoContent, "No data available")
+	if len(messages) == 0 && len(consumers) == 0 && len(dbmsgs) == 0 && len(failedChannels) == 0 {
+		return []map[string]interface{}{}
 	}
 
-	if len(persistMessages) > len(messages) {
-		messages = persistMessages
+	if len(dbmsgs) > len(messages) {
+		messages = dbmsgs
 	}
 
 	channelSet := make(map[string]struct{})
@@ -39,16 +89,19 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 	}
 
 	response := make([]map[string]interface{}, 0, len(channelSet))
+	id := 1
 	for channelName := range channelSet {
 		channelInfo := map[string]interface{}{
+			"id":                        id,
 			"channelName":               channelName,
 			"noOfMessagesInQueue":       messageQueue.GetCount(channelName),
 			"noOfConsumers":             len(consumers[channelName]),
 			"noOfRequests":              requestCounter.Get(channelName),
-			"noOfMessagesInPersistence": persist.ReadCount(channelName, file),
+			"noOfMessagesInPersistence": sqlite.ReadCount(channelName, database),
 			"failedMessages":            failMsgCount.Get(channelName),
 		}
 		response = append(response, channelInfo)
+		id++
 	}
-	return c.JSON(http.StatusOK, response)
+	return response
 }

@@ -1,15 +1,14 @@
 package tcpconn
 
 import (
+	"database/sql"
 	"net"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/internal/persistence"
-	"github.com/sirupsen/logrus"
+	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,20 +52,17 @@ func TestHandleNewClientConnection(t *testing.T) {
 	mockMessageQueue := channelconsumer.NewInMemoryMessageQueue()
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
-	mockPersist := persistence.New()
 	mockChannel := channelconsumer.NewChannel()
+	sqlite := sqlite.New()
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.FilePath = "./internal/persistence/persisted_messages.txt"
+		config.DBPATH = "../../sqlite/msgbroker.db"
 	}
-	file, err := os.OpenFile(config.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		logrus.Error("Error in opening file: ", err)
-	}
-	defer file.Close()
+	database, _ := sql.Open("sqlite3", config.DBPATH)
+	defer database.Close()
 
-	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockPersist, file, mockChannel)
+	server := New(":8081", mockConsumerStore, mockMessageQueue, mockConsumerIdGenerator, mockMessageIdGenerator, mockChannel, database, sqlite)
 
 	mockConn := &MockConn{}
 

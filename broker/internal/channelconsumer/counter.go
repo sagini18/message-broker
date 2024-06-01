@@ -20,12 +20,16 @@ type RequestCounter struct {
 	mu            sync.RWMutex
 	count         map[string]*atomic.Uint32
 	requestEvents []RequestEvent
+	sseChannel    chan struct{}
+	sseChannSum   chan struct{}
 }
 
 func NewRequestCounter() *RequestCounter {
 	return &RequestCounter{
 		count:         make(map[string]*atomic.Uint32),
 		requestEvents: []RequestEvent{},
+		sseChannel:    make(chan struct{}, 1),
+		sseChannSum:   make(chan struct{}, 1),
 	}
 }
 
@@ -58,6 +62,7 @@ func (rc *RequestCounter) recordEvent() {
 			Timestamp: time.Now(),
 			Count:     1,
 		})
+		rc.notifySSE()
 		return
 	}
 	lastNo := rc.requestEvents[len(rc.requestEvents)-1].Count
@@ -67,23 +72,47 @@ func (rc *RequestCounter) recordEvent() {
 		Count:     lastNo + 1,
 	})
 
+	rc.notifySSE()
 }
 
 func (rc *RequestCounter) GetEventCount() []RequestEvent {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 
-	return append([]RequestEvent(nil), rc.requestEvents...)
+	return append([]RequestEvent{}, rc.requestEvents...)
+}
+
+func (rc *RequestCounter) SSEChannel() <-chan struct{} {
+	return rc.sseChannel
+}
+
+func (rc *RequestCounter) SSEChannelSummary() <-chan struct{} {
+	return rc.sseChannSum
+}
+
+func (rc *RequestCounter) notifySSE() {
+	select {
+	case rc.sseChannel <- struct{}{}:
+	default:
+	}
+	select {
+	case rc.sseChannSum <- struct{}{}:
+	default:
+	}
 }
 
 type FailMsgCounter struct {
-	mu    sync.RWMutex
-	count map[string]*atomic.Uint32
+	mu          sync.RWMutex
+	count       map[string]*atomic.Uint32
+	sseChannel  chan struct{}
+	sseChannSum chan struct{}
 }
 
 func NewFailMsgCounter() *FailMsgCounter {
 	return &FailMsgCounter{
-		count: make(map[string]*atomic.Uint32),
+		count:       make(map[string]*atomic.Uint32),
+		sseChannel:  make(chan struct{}, 1),
+		sseChannSum: make(chan struct{}, 1),
 	}
 }
 
@@ -94,6 +123,8 @@ func (f *FailMsgCounter) Add(channelName string) {
 	}
 	f.count[channelName].Add(1)
 	f.mu.Unlock()
+
+	f.notifySSE()
 }
 
 func (f *FailMsgCounter) Get(channelName string) int {
@@ -113,4 +144,23 @@ func (f *FailMsgCounter) GetAllChannel() []string {
 		channels = append(channels, channel)
 	}
 	return channels
+}
+
+func (f *FailMsgCounter) SSEChannel() <-chan struct{} {
+	return f.sseChannel
+}
+
+func (f *FailMsgCounter) SSEChannelSummary() <-chan struct{} {
+	return f.sseChannSum
+}
+
+func (f *FailMsgCounter) notifySSE() {
+	select {
+	case f.sseChannel <- struct{}{}:
+	default:
+	}
+	select {
+	case f.sseChannSum <- struct{}{}:
+	default:
+	}
 }
