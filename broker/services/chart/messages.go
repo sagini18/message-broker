@@ -1,10 +1,10 @@
 package chart
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 )
@@ -20,6 +20,7 @@ func Messages(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache
 	}
 
 	messageEvents := messageQueue.GetEventCount()
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	data, err := json.Marshal(messageEvents)
 	if err != nil {
 		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)

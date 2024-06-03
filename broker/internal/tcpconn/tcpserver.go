@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
@@ -69,6 +70,7 @@ func (t *TCPServer) Listen() error {
 }
 
 func (t *TCPServer) handleNewClientConnection(connection net.Conn) (string, *channelconsumer.Consumer, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	channelBuf := make([]byte, 200)
 
 	n, err := connection.Read(channelBuf)

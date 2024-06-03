@@ -1,11 +1,11 @@
 package channelconsumer
 
 import (
-	"encoding/json"
 	"net"
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -80,6 +80,7 @@ func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelName string, connection net.Conn) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 

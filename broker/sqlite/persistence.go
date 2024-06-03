@@ -2,10 +2,10 @@ package sqlite
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sync"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sirupsen/logrus"
 )
@@ -27,6 +27,7 @@ func New() Persistence {
 }
 
 func (p *persistence) Write(data channelconsumer.Message, db *sql.DB) error {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -45,6 +46,7 @@ func (p *persistence) Write(data channelconsumer.Message, db *sql.DB) error {
 }
 
 func (p *persistence) Read(channelName string, db *sql.DB) ([]channelconsumer.Message, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -81,6 +83,7 @@ func (p *persistence) Read(channelName string, db *sql.DB) ([]channelconsumer.Me
 }
 
 func (p *persistence) ReadAll(db *sql.DB) (map[string][]channelconsumer.Message, error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

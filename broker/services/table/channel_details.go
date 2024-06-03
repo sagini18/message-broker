@@ -2,15 +2,17 @@ package table
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, sqlite sqlite.Persistence, database *sql.DB) error {
 	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")

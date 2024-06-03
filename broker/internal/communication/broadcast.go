@@ -2,10 +2,10 @@ package communication
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"strings"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/sqlite"
@@ -61,6 +61,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 }
 
 func writeMessage(messageCacheData []channelconsumer.Message, channelName string, store *channelconsumer.InMemoryConsumerCache, messageQueue *channelconsumer.InMemoryMessageCache, channel *channelconsumer.Channel) error {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	consumers := store.GetByChannel(channelName)
 
 	if len(consumers) == 0 {
