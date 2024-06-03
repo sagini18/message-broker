@@ -4,7 +4,7 @@ import {
   disconnectMsg,
   setMsgEvents,
   setEventSourceUrl,
-} from "../message/messageSlice.js";
+} from "./messageSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
 
 export const startMsgConnection = createAsyncThunk(
@@ -16,7 +16,7 @@ export const startMsgConnection = createAsyncThunk(
       return;
     }
     const MSG_EVENT_SOURCE_KEY = 'message';
-    const MSG_EVENT_SOURCE_URL = "http://localhost:8080/api/message/count";
+    const MSG_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/messages/events";
 
     startEventSource(
       MSG_EVENT_SOURCE_KEY,

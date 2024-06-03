@@ -4,7 +4,7 @@ import {
   disconnectConsumer,
   setConsumerEvents,
   setEventSourceUrl,
-} from "../consumer/consumerSlice.js";
+} from "./consumerSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
 
 export const startConsumerConnection = createAsyncThunk(
@@ -16,7 +16,7 @@ export const startConsumerConnection = createAsyncThunk(
       return;
     }
     const CONSUMER_EVENT_SOURCE_KEY = 'consumer';
-    const CONSUMER_EVENT_SOURCE_URL = "http://localhost:8080/api/consumer/count";
+    const CONSUMER_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/consumers/events";
 
     startEventSource(
       CONSUMER_EVENT_SOURCE_KEY,

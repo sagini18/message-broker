@@ -57,27 +57,29 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 
-	app.POST("/api/channels/:id", func(c echo.Context) error {
+	api := app.Group("/api/v1")
+
+	api.POST("/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
 	})
 
-	app.GET("/api/channel/all", func(c echo.Context) error {
+	api.GET("/collection/channels", func(c echo.Context) error {
 		return table.ChannelDetails(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
 	})
 
-	app.GET("/api/consumer/count", func(c echo.Context) error {
+	api.GET("/consumers/events", func(c echo.Context) error {
 		return chart.Consumer(c, consumerStorage)
 	})
 
-	app.GET("/api/message/count", func(c echo.Context) error {
+	api.GET("/messages/events", func(c echo.Context) error {
 		return chart.Messages(c, messageQueue)
 	})
 
-	app.GET("/api/request/count", func(c echo.Context) error {
+	api.GET("/requests/events", func(c echo.Context) error {
 		return chart.Request(c, requestCounter)
 	})
 
-	app.GET("/api/channel/count", func(c echo.Context) error {
+	api.GET("/channels/events", func(c echo.Context) error {
 		return chart.Channel(c, channel)
 	})
 

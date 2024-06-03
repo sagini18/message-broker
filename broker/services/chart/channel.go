@@ -16,7 +16,7 @@ func Channel(c echo.Context, channel *channelconsumer.Channel) error {
 
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
-		return c.String(http.StatusInternalServerError, "Streaming unsupported")
+		return c.String(http.StatusNotImplemented, "Streaming unsupported")
 	}
 
 	channelEvents := channel.Get()
@@ -24,8 +24,10 @@ func Channel(c echo.Context, channel *channelconsumer.Channel) error {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	data, err := json.Marshal(channelEvents)
 	if err != nil {
-		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
-		return err
+		return c.JSON(http.StatusNotImplemented, map[string]string{
+			"type":    "StreamError",
+			"message": "Streaming unsupported",
+		})
 	}
 	fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 	flusher.Flush()
@@ -38,8 +40,11 @@ func Channel(c echo.Context, channel *channelconsumer.Channel) error {
 			channelEvents := channel.Get()
 			data, err := json.Marshal(channelEvents)
 			if err != nil {
-				http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
-				return err
+				return c.JSON(http.StatusInternalServerError, map[string]string{
+					"type":    "MarshalError",
+					"message": "Error in marshalling",
+					"cause":   err.Error(),
+				})
 			}
 			fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 			flusher.Flush()

@@ -16,7 +16,10 @@ func Consumer(c echo.Context, consumerStore *channelconsumer.InMemoryConsumerCac
 
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
-		return c.String(http.StatusInternalServerError, "Streaming unsupported")
+		return c.JSON(http.StatusNotImplemented, map[string]string{
+			"type":    "StreamError",
+			"message": "Streaming unsupported",
+		})
 	}
 
 	consumerEvents := consumerStore.GetEventCount()
@@ -37,8 +40,11 @@ func Consumer(c echo.Context, consumerStore *channelconsumer.InMemoryConsumerCac
 			consumerEvents := consumerStore.GetEventCount()
 			data, err := json.Marshal(consumerEvents)
 			if err != nil {
-				http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
-				return err
+				return c.JSON(http.StatusInternalServerError, map[string]string{
+					"type":    "MarshalError",
+					"message": "Error in marshalling",
+					"cause":   err.Error(),
+				})
 			}
 			fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 			flusher.Flush()

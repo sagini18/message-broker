@@ -9,23 +9,23 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   startChannelConnection,
   stopChannelConnection,
-} from "../store/channel/sse.Thunks";
+} from "../store/channels_events/sse.Thunks";
 import {
   startConsumerConnection,
   stopConsumerConnection,
-} from "../store/consumer/sse.Thunks";
+} from "../store/consumers_events/sse.Thunks";
 import {
   startRequestConnection,
   stopRequestConnection,
-} from "../store/request/sse.Thunks";
+} from "../store/requests_events/sse.Thunks";
 import {
   startMsgConnection,
   stopMsgConnection,
-} from "../store/message/sse.Thunks";
+} from "../store/messages_events/sse.Thunks";
 import {
   startChannSumConnection,
   stopChannSumConnection,
-} from "../store/channel_summary/sse.Thunks";
+} from "../store/channels/sse.Thunks";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -50,10 +50,6 @@ export default function Dashboard() {
       dispatch(stopChannSumConnection());
     };
   }, [dispatch]);
-
-  console.log("channelEvents :", channelEvents);
-  console.log("requestEvents :", requestEvents);
-  console.log("msgEvents :", msgEvents);
 
   return (
     <div>

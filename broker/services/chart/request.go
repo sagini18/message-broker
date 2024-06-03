@@ -16,15 +16,21 @@ func Request(c echo.Context, requestCounter *channelconsumer.RequestCounter) err
 
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
-		return c.String(http.StatusInternalServerError, "Streaming unsupported")
+		return c.JSON(http.StatusNotImplemented, map[string]string{
+			"type":    "StreamError",
+			"message": "Streaming unsupported",
+		})
 	}
 
 	requestEvents := requestCounter.GetEventCount()
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	data, err := json.Marshal(requestEvents)
 	if err != nil {
-		http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"type":    "MarshalError",
+			"message": "Error in marshalling",
+			"cause":   err.Error(),
+		})
 	}
 	fmt.Fprintf(c.Response().Writer, "data: %s\n\n", data)
 	flusher.Flush()

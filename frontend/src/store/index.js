@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import channelReducer from './channel/channelSlice';
-import consumerReducer from './consumer/consumerSlice';
-import requestReducer from "./request/requestSlice"
-import messageReducer from "./message/messageSlice"
-import channelSummaryReducer from "./channel_summary/channSumSlice"
+import channelReducer from './channels_events/channelSlice';
+import consumerReducer from './consumers_events/consumerSlice';
+import requestReducer from "./requests_events/requestSlice"
+import messageReducer from "./messages_events/messageSlice"
+import channelSummaryReducer from "./channels/channSumSlice"
 
 const store = configureStore({
   reducer: {

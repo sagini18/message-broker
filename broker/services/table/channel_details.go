@@ -21,7 +21,10 @@ func ChannelDetails(c echo.Context, messageQueue *channelconsumer.InMemoryMessag
 
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
-		return c.String(http.StatusInternalServerError, "Streaming unsupported")
+		return c.JSON(http.StatusNotImplemented, map[string]string{
+			"type":    "StreamError",
+			"message": "Streaming unsupported",
+		})
 	}
 
 	sendResponse := func() {

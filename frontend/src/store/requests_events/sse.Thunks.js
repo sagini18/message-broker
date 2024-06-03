@@ -4,7 +4,7 @@ import {
   disconnectRequest,
   setRequestEvents,
   setEventSourceUrl,
-} from "../request/requestSlice.js";
+} from "./requestSlice.js";
 import { startEventSource, closeEventSource } from "../eventSourceManager.js";
 
 export const startRequestConnection = createAsyncThunk(
@@ -16,7 +16,7 @@ export const startRequestConnection = createAsyncThunk(
       return;
     }
     const REQ_EVENT_SOURCE_KEY = 'request';
-    const REQ_EVENT_SOURCE_URL = "http://localhost:8080/api/request/count";
+    const REQ_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/requests/events";
 
     startEventSource(
       REQ_EVENT_SOURCE_KEY,

@@ -17,7 +17,7 @@ export const startChannelConnection = createAsyncThunk(
     }
 
     const CHANNEL_EVENT_SOURCE_KEY = "channel";
-    const CHANNEL_EVENT_SOURCE_URL = "http://localhost:8080/api/channel/count";
+    const CHANNEL_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/channels/events";
 
 
     startEventSource(
