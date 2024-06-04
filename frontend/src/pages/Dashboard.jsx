@@ -7,46 +7,21 @@ import GraphCard from "../components/Card";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  startChannelConnection,
-  stopChannelConnection,
-} from "../store/channels_events/sse.Thunks";
-import {
-  startConsumerConnection,
-  stopConsumerConnection,
-} from "../store/consumers_events/sse.Thunks";
-import {
-  startRequestConnection,
-  stopRequestConnection,
-} from "../store/requests_events/sse.Thunks";
-import {
-  startMsgConnection,
-  stopMsgConnection,
-} from "../store/messages_events/sse.Thunks";
-import {
   startChannSumConnection,
   stopChannSumConnection,
-} from "../store/channels/sse.Thunks";
+} from "../store/sse/channels/sse.Thunks";
+import { useMetrics } from "../store/metrics/useMetrics";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { channelEvents } = useSelector((state) => state.channel);
-  const { consumerEvents } = useSelector((state) => state.consumer);
-  const { requestEvents } = useSelector((state) => state.request);
-  const { msgEvents } = useSelector((state) => state.message);
   const { channSumEvents } = useSelector((state) => state.channSum);
+  const { channelsEvents, requestsEvents, consumersEvents, messagesEvents } =
+    useMetrics();
 
   useEffect(() => {
-    dispatch(startChannelConnection());
-    dispatch(startConsumerConnection());
-    dispatch(startRequestConnection());
-    dispatch(startMsgConnection());
     dispatch(startChannSumConnection());
 
     return () => {
-      dispatch(stopChannelConnection());
-      dispatch(stopConsumerConnection());
-      dispatch(stopRequestConnection());
-      dispatch(stopMsgConnection());
       dispatch(stopChannSumConnection());
     };
   }, [dispatch]);
@@ -70,7 +45,7 @@ export default function Dashboard() {
           <BasicLineChart
             color={"blue"}
             name="No of messages"
-            dataset={msgEvents}
+            dataset={messagesEvents}
           />
         </Paper>
         <Box
@@ -78,22 +53,26 @@ export default function Dashboard() {
           flexDirection={"column"}
           justifyContent={"space-around"}>
           <GraphCard
-            title={"Requests for Sending Messages to Consumer Since Server Startup"}
+            title={
+              "Requests for Sending Messages to Consumer Since Server Startup"
+            }
             name={"No of requests"}
             color={"#5E35B1"}
-            dataset={requestEvents}
+            dataset={requestsEvents}
           />
           <GraphCard
             title={"Channel Creation and Removal Times Since Server Startup"}
             name={"No of channels"}
             color={"#35B175"}
-            dataset={channelEvents}
+            dataset={channelsEvents}
           />
           <GraphCard
-            title={"Consumer Connection and Disconnection Times Since Server Startup"}
+            title={
+              "Consumer Connection and Disconnection Times Since Server Startup"
+            }
             name={"No of consumers"}
             color={"#1E88E5"}
-            dataset={consumerEvents}
+            dataset={consumersEvents}
           />
         </Box>
       </Box>

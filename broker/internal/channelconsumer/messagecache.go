@@ -6,6 +6,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sagini18/message-broker/broker/metrics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,23 +22,18 @@ type MessageStorage interface {
 	SendPendingMessages(channelName string, connection net.Conn)
 	GetAll() map[string][]Message
 	GetCount(channelName string) int
-	GetEventCount() []MessageEvent
 }
 
 type InMemoryMessageCache struct {
-	mu            sync.RWMutex
-	messages      map[string][]Message
-	messageEvents []MessageEvent
-	sseChannel    chan struct{}
-	sseChannSum   chan struct{}
+	mu          sync.RWMutex
+	messages    map[string][]Message
+	sseChannSum chan struct{}
 }
 
 func NewInMemoryMessageQueue() *InMemoryMessageCache {
 	return &InMemoryMessageCache{
-		messages:      make(map[string][]Message),
-		messageEvents: []MessageEvent{},
-		sseChannel:    make(chan struct{}, 1),
-		sseChannSum:   make(chan struct{}, 1),
+		messages:    make(map[string][]Message),
+		sseChannSum: make(chan struct{}, 1),
 	}
 }
 
@@ -52,7 +48,8 @@ func (mc *InMemoryMessageCache) Add(message Message) {
 		mc.messages[message.ChannelName] = []Message{message}
 	}
 	logrus.Info("Added message to cache: ", message.Content)
-	mc.recordEvent()
+	metrics.MessageEvents.Inc()
+	mc.notifySSE()
 }
 
 func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
@@ -76,7 +73,8 @@ func (mc *InMemoryMessageCache) Remove(id int, channelName string) {
 	if len(updatedMessages) == 0 {
 		delete(mc.messages, channelName)
 	}
-	mc.recordEvent()
+	metrics.MessageEvents.Dec()
+	mc.notifySSE()
 }
 
 func (mc *InMemoryMessageCache) SendPendingMessages(channelName string, connection net.Conn) {
@@ -130,39 +128,11 @@ func (mc *InMemoryMessageCache) GetCount(channelName string) int {
 	return len(mc.messages[channelName])
 }
 
-func (mc *InMemoryMessageCache) recordEvent() {
-	count := 0
-	for _, messages := range mc.messages {
-		count += len(messages)
-	}
-	mc.messageEvents = append(mc.messageEvents, MessageEvent{
-		Timestamp: time.Now(),
-		Count:     count,
-	})
-
-	mc.notifySSE()
-}
-
-func (mc *InMemoryMessageCache) GetEventCount() []MessageEvent {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
-
-	return append([]MessageEvent{}, mc.messageEvents...)
-}
-
 func (mc *InMemoryMessageCache) notifySSE() {
-	select {
-	case mc.sseChannel <- struct{}{}:
-	default:
-	}
 	select {
 	case mc.sseChannSum <- struct{}{}:
 	default:
 	}
-}
-
-func (mc *InMemoryMessageCache) SSEChannel() <-chan struct{} {
-	return mc.sseChannel
 }
 
 func (mc *InMemoryMessageCache) SSEChannelSummary() <-chan struct{} {

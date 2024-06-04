@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Message Broker API
+  description: Admin dashboard APIs for monitoring the message broker system.
+  contact:
+    name: Sagini Navaratnam
+    email: navaratnamsagini@gmail.com
+  version: 1.0.0
+servers: 
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/SaginiNavaratnam/message-broker/1.0.0
+  - url: http://localhost:8080/api/v1
+tags: 
+  - name: channels
+    description: Operations related to channels
+  - name: metrics
+    description: Operations related to metrics of messages, requests, consumers and channels count
+paths:
+  /channels:
+    get: 
+      tags: 
+        - channels
+      description: Retrieve detailed information about all channels including count of messages, consumers, producers, and failed messages.
+      responses:
+        200:
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      properties:
+                        channelName:
+                          type: string
+                          description: The name of the channel
+                          example: channel_2
+                        noOfMessagesInQueue:
+                          type: integer
+                          description: The number of messages currently in the queue
+                          example: 12
+                        noOfConsumers:
+                          type: integer
+                          description: The number of consumers currently subscribed to the channel
+                          example: 2
+                        noOfRequests:
+                          type: integer
+                          description: The total number of messages sent to the channel since the server started
+                          example: 1356
+                        noOfMessagesInPersistence:
+                          type: integer
+                          description: The number of messages currently stored in persistence
+                          example: 15
+                        failedMessages:
+                          type: integer
+                          description: The number of messages that failed to be delivered
+                          example: 0
+        501:
+          description: Not Implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamError'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarshalError'
+  /channels/{id}:
+    post:
+      tags: 
+      - channels
+      description: 
+        API to publish messages to the consumers
+      parameters: 
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: channel_2
+      requestBody:
+        description: add the content to a specific channel by ID
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example: {content: 234}
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ID:
+                    type: integer
+                    example: 1300672444
+                  ChannelName:
+                    type: string
+                    example: channel_2
+                  Content:
+                    example: 234
+  /metrics:
+    get:
+      tags: 
+        - metrics
+      description: Prometheus scrape metrics
+      responses:
+        200:
+          description: Successful Operation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP channels_events Current number of channels
+                  # TYPE channels_events gauge
+                  channels_events 2
+                  # HELP consumers_events Current number of consumers
+                  # TYPE consumers_events gauge
+                  consumers_events 0
+                  # HELP messages_events Current number of messages
+                  # TYPE messages_events gauge
+                  messages_events 4
+                  # HELP requests_events Total number of requests served
+                  # TYPE requests_events counter
+                  requests_events 4                
+components:
+  schemas:
+    MarshalError:
+      type: object
+      properties:
+        type:
+          type: string
+          example: MarshalError
+        message:
+          type: string
+          example: Error in marshalling
+        cause:
+          type: string
+    StreamError:
+      type: object
+      properties:
+        type: 
+          type: string
+          example: StreamError
+        message:
+          type: string
+          example: Streaming unsupported

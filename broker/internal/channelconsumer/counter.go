@@ -3,7 +3,8 @@ package channelconsumer
 import (
 	"sync"
 	"sync/atomic"
-	"time"
+
+	"github.com/sagini18/message-broker/broker/metrics"
 )
 
 type Counter interface {
@@ -11,25 +12,16 @@ type Counter interface {
 	Get(channelName string) int
 }
 
-type RequestEvent struct {
-	Timestamp time.Time
-	Count     uint32
-}
-
 type RequestCounter struct {
-	mu            sync.RWMutex
-	count         map[string]*atomic.Uint32
-	requestEvents []RequestEvent
-	sseChannel    chan struct{}
-	sseChannSum   chan struct{}
+	mu          sync.RWMutex
+	count       map[string]*atomic.Uint32
+	sseChannSum chan struct{}
 }
 
 func NewRequestCounter() *RequestCounter {
 	return &RequestCounter{
-		count:         make(map[string]*atomic.Uint32),
-		requestEvents: []RequestEvent{},
-		sseChannel:    make(chan struct{}, 1),
-		sseChannSum:   make(chan struct{}, 1),
+		count:       make(map[string]*atomic.Uint32),
+		sseChannSum: make(chan struct{}, 1),
 	}
 }
 
@@ -41,7 +33,8 @@ func (rc *RequestCounter) Add(channelName string) {
 	rc.count[channelName].Add(1)
 	rc.mu.Unlock()
 
-	rc.recordEvent()
+	metrics.RequestsEvents.Inc()
+	rc.notifySSE()
 }
 
 func (rc *RequestCounter) Get(channelName string) int {
@@ -53,48 +46,11 @@ func (rc *RequestCounter) Get(channelName string) int {
 	return 0
 }
 
-func (rc *RequestCounter) recordEvent() {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-
-	if len(rc.requestEvents) < 1 {
-		rc.requestEvents = append(rc.requestEvents, RequestEvent{
-			Timestamp: time.Now(),
-			Count:     1,
-		})
-		rc.notifySSE()
-		return
-	}
-	lastNo := rc.requestEvents[len(rc.requestEvents)-1].Count
-
-	rc.requestEvents = append(rc.requestEvents, RequestEvent{
-		Timestamp: time.Now(),
-		Count:     lastNo + 1,
-	})
-
-	rc.notifySSE()
-}
-
-func (rc *RequestCounter) GetEventCount() []RequestEvent {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
-	return append([]RequestEvent{}, rc.requestEvents...)
-}
-
-func (rc *RequestCounter) SSEChannel() <-chan struct{} {
-	return rc.sseChannel
-}
-
 func (rc *RequestCounter) SSEChannelSummary() <-chan struct{} {
 	return rc.sseChannSum
 }
 
 func (rc *RequestCounter) notifySSE() {
-	select {
-	case rc.sseChannel <- struct{}{}:
-	default:
-	}
 	select {
 	case rc.sseChannSum <- struct{}{}:
 	default:
@@ -104,14 +60,12 @@ func (rc *RequestCounter) notifySSE() {
 type FailMsgCounter struct {
 	mu          sync.RWMutex
 	count       map[string]*atomic.Uint32
-	sseChannel  chan struct{}
 	sseChannSum chan struct{}
 }
 
 func NewFailMsgCounter() *FailMsgCounter {
 	return &FailMsgCounter{
 		count:       make(map[string]*atomic.Uint32),
-		sseChannel:  make(chan struct{}, 1),
 		sseChannSum: make(chan struct{}, 1),
 	}
 }
@@ -146,19 +100,11 @@ func (f *FailMsgCounter) GetAllChannel() []string {
 	return channels
 }
 
-func (f *FailMsgCounter) SSEChannel() <-chan struct{} {
-	return f.sseChannel
-}
-
 func (f *FailMsgCounter) SSEChannelSummary() <-chan struct{} {
 	return f.sseChannSum
 }
 
 func (f *FailMsgCounter) notifySSE() {
-	select {
-	case f.sseChannel <- struct{}{}:
-	default:
-	}
 	select {
 	case f.sseChannSum <- struct{}{}:
 	default:

@@ -9,12 +9,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
-	"github.com/sagini18/message-broker/broker/services/chart"
-	"github.com/sagini18/message-broker/broker/services/table"
+	"github.com/sagini18/message-broker/broker/services"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
@@ -59,28 +59,14 @@ func main() {
 
 	api := app.Group("/api/v1")
 
+	api.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
 	api.POST("/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
 	})
 
 	api.GET("/channels", func(c echo.Context) error {
-		return table.ChannelDetails(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
-	})
-
-	api.GET("/consumers/events", func(c echo.Context) error {
-		return chart.Consumer(c, consumerStorage)
-	})
-
-	api.GET("/messages/events", func(c echo.Context) error {
-		return chart.Messages(c, messageQueue)
-	})
-
-	api.GET("/requests/events", func(c echo.Context) error {
-		return chart.Request(c, requestCounter)
-	})
-
-	api.GET("/channels/events", func(c echo.Context) error {
-		return chart.Channel(c, channel)
+		return services.Channels(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
 	})
 
 	if err := app.Start(":8080"); err != nil {

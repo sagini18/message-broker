@@ -2,15 +2,10 @@ package channelconsumer
 
 import (
 	"sync"
-	"time"
 
+	"github.com/sagini18/message-broker/broker/metrics"
 	"github.com/sirupsen/logrus"
 )
-
-type ConsumerEvent struct {
-	Timestamp time.Time
-	Count     int
-}
 
 type Storage interface {
 	Add(consumer *Consumer)
@@ -18,23 +13,18 @@ type Storage interface {
 	GetAll() map[string][]Consumer
 	Get(consumerId int, channelName string) Consumer
 	GetByChannel(channelName string) []Consumer
-	GetEventCount() []ConsumerEvent
 }
 
 type InMemoryConsumerCache struct {
-	mu             sync.RWMutex
-	consumers      map[string][]Consumer
-	consumerEvents []ConsumerEvent
-	sseChannel     chan struct{}
-	sseChannSum    chan struct{}
+	mu          sync.RWMutex
+	consumers   map[string][]Consumer
+	sseChannSum chan struct{}
 }
 
 func NewInMemoryInMemoryConsumerCache() *InMemoryConsumerCache {
 	return &InMemoryConsumerCache{
-		consumers:      make(map[string][]Consumer),
-		consumerEvents: []ConsumerEvent{},
-		sseChannel:     make(chan struct{}, 1),
-		sseChannSum:    make(chan struct{}, 1),
+		consumers:   make(map[string][]Consumer),
+		sseChannSum: make(chan struct{}, 1),
 	}
 }
 
@@ -48,7 +38,8 @@ func (cc *InMemoryConsumerCache) Add(consumer *Consumer) {
 	} else {
 		cc.consumers[consumer.SubscribedChannel] = []Consumer{*consumer}
 	}
-	cc.recordEvent()
+	metrics.ConsumerEvents.Inc()
+	cc.notifySSE()
 	logrus.Info("Added consumer from cache: ", *consumer)
 }
 
@@ -73,7 +64,8 @@ func (cc *InMemoryConsumerCache) Remove(consumerId int, channelName string) {
 	if len(updatedConsumers) == 0 {
 		delete(cc.consumers, channelName)
 	}
-	cc.recordEvent()
+	metrics.ConsumerEvents.Dec()
+	cc.notifySSE()
 }
 
 func (cc *InMemoryConsumerCache) GetAll() map[string][]Consumer {
@@ -115,38 +107,11 @@ func (cc *InMemoryConsumerCache) GetByChannel(channelName string) []Consumer {
 	return append([]Consumer(nil), consumers...)
 }
 
-func (cc *InMemoryConsumerCache) recordEvent() {
-	count := 0
-	for _, consumers := range cc.consumers {
-		count += len(consumers)
-	}
-	cc.consumerEvents = append(cc.consumerEvents, ConsumerEvent{
-		Timestamp: time.Now(),
-		Count:     count,
-	})
-	cc.notifySSE()
-}
-
-func (cc *InMemoryConsumerCache) GetEventCount() []ConsumerEvent {
-	cc.mu.Lock()
-	defer cc.mu.Unlock()
-
-	return append([]ConsumerEvent{}, cc.consumerEvents...)
-}
-
 func (cc *InMemoryConsumerCache) notifySSE() {
-	select {
-	case cc.sseChannel <- struct{}{}:
-	default:
-	}
 	select {
 	case cc.sseChannSum <- struct{}{}:
 	default:
 	}
-}
-
-func (cc *InMemoryConsumerCache) SSEChannel() <-chan struct{} {
-	return cc.sseChannel
 }
 
 func (cc *InMemoryConsumerCache) SSEChannelSummary() <-chan struct{} {

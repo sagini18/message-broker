@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -9,7 +9,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import CardModel from "./Model";
 import { Paper } from "@mui/material";
 
-export default function GraphCard({ dataset, name, color ,title}) {
+export default memo(function GraphCard({ dataset, name, color, title }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export default function GraphCard({ dataset, name, color ,title}) {
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             <CardContent sx={{ flex: "1 0 auto" }}>
               <Typography component="div" variant="h5" color={"white"}>
-                {dataset?.length > 0 ? dataset[dataset?.length - 1]?.Count : 0}
+                {dataset?.length > 0 ? dataset[dataset?.length - 1]?.count : 0}
               </Typography>
               <Typography
                 variant="subtitle2"
@@ -61,4 +61,4 @@ export default function GraphCard({ dataset, name, color ,title}) {
       />
     </>
   );
-}
+});
