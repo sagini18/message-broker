@@ -12,7 +12,7 @@ export const startChannSumConnection = createAsyncThunk(
     }
 
     const CHANN_SUM_EVENT_SOURCE_KEY = "channSum";
-    const CHANN_SUM_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/collection/channels";
+    const CHANN_SUM_EVENT_SOURCE_URL = "http://localhost:8080/api/v1/channels";
 
     startEventSource(
       CHANN_SUM_EVENT_SOURCE_KEY,

@@ -9,7 +9,7 @@ import BasicBarChart from "./BarChart";
 import BasicLineChart from "./Chart";
 
 
-export default function CardModel({ open, handleClose, name, color , dataset}) {
+export default function CardModel({ open, handleClose,title, name, color , dataset}) {
   const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     "& .MuiDialogContent-root": {
       padding: theme.spacing(2),
@@ -25,8 +25,8 @@ export default function CardModel({ open, handleClose, name, color , dataset}) {
         onClose={handleClose}
         aria-labelledby="customized-dialog-title"
         open={open}>
-        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-          {name}
+        <DialogTitle sx={{ m: 0, p: 2 ,fontSize:"16px"}} id="customized-dialog-title">
+          {title}
         </DialogTitle>
         <IconButton
           aria-label="close"

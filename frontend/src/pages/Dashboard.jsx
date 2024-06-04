@@ -58,7 +58,15 @@ export default function Dashboard() {
         <DataTable rows={channSumEvents} />
       </Box>
       <Box display={"flex"} justifyContent={"space-evenly"} pt={1}>
-        <Paper elevation={3} sx={{ backgroundColor: "#F1F1F1", width:"45vw", display:"flex",justifyContent:"center" }}>
+        <Paper
+          elevation={3}
+          sx={{
+            backgroundColor: "#F1F1F1",
+            width: "45vw",
+            display: "flex",
+            justifyContent: "center",
+          }}>
+          {/* "Message Arrival and Removal Times from Cache Since Server Startup" */}
           <BasicLineChart
             color={"blue"}
             name="No of messages"
@@ -70,16 +78,19 @@ export default function Dashboard() {
           flexDirection={"column"}
           justifyContent={"space-around"}>
           <GraphCard
+            title={"Requests for Sending Messages to Consumer Since Server Startup"}
             name={"No of requests"}
             color={"#5E35B1"}
             dataset={requestEvents}
           />
           <GraphCard
+            title={"Channel Creation and Removal Times Since Server Startup"}
             name={"No of channels"}
             color={"#35B175"}
             dataset={channelEvents}
           />
           <GraphCard
+            title={"Consumer Connection and Disconnection Times Since Server Startup"}
             name={"No of consumers"}
             color={"#1E88E5"}
             dataset={consumerEvents}

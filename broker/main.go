@@ -63,7 +63,7 @@ func main() {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
 	})
 
-	api.GET("/collection/channels", func(c echo.Context) error {
+	api.GET("/channels", func(c echo.Context) error {
 		return table.ChannelDetails(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
 	})
 

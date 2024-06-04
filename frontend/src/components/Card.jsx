@@ -9,7 +9,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import CardModel from "./Model";
 import { Paper } from "@mui/material";
 
-export default function GraphCard({ dataset, name, color }) {
+export default function GraphCard({ dataset, name, color ,title}) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -54,6 +54,7 @@ export default function GraphCard({ dataset, name, color }) {
       <CardModel
         open={open}
         handleClose={() => setOpen(false)}
+        title={title}
         name={name}
         color={color}
         dataset={dataset}
