@@ -93,8 +93,8 @@ export default function DataTable({rows}) {
     <Box
     pt={1}
       sx={{
-        height: "47.8vh",
-        width: "65vw",
+        height: "500",
+        width: "300",
       }}>
       <DataGrid
         rows={rows}

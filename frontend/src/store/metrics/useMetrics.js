@@ -2,10 +2,18 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 
 export const useMetrics = () => {
-  const [channelsEvents, setChannelsEvents] = useState([]);
-  const [requestsEvents, setRequestsEvents] = useState([]);
-  const [consumersEvents, setConsumersEvents] = useState([]);
-  const [messagesEvents, setMessagesEvents] = useState([]);
+  const [channelsEvents, setChannelsEvents] = useState(
+    JSON.parse(localStorage.getItem("channelsEvents")) || []
+  );
+  const [requestsEvents, setRequestsEvents] = useState(
+    JSON.parse(localStorage.getItem("requestsEvents")) || []
+  );
+  const [consumersEvents, setConsumersEvents] = useState(
+    JSON.parse(localStorage.getItem("consumersEvents")) || []
+  );
+  const [messagesEvents, setMessagesEvents] = useState(
+    JSON.parse(localStorage.getItem("messagesEvents")) || []
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,8 +78,13 @@ export const useMetrics = () => {
 
     const intervalId = setInterval(fetchData, 5000);
 
+    localStorage.setItem("channelsEvents", JSON.stringify(channelsEvents));
+    localStorage.setItem("requestsEvents", JSON.stringify(requestsEvents));
+    localStorage.setItem("consumersEvents", JSON.stringify(consumersEvents));
+    localStorage.setItem("messagesEvents", JSON.stringify(messagesEvents));
+
     return () => clearInterval(intervalId);
-  }, []);
+  }, [channelsEvents, requestsEvents, consumersEvents, messagesEvents]);
 
   return { channelsEvents, requestsEvents, consumersEvents, messagesEvents };
 };

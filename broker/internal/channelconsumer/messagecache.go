@@ -3,17 +3,11 @@ package channelconsumer
 import (
 	"net"
 	"sync"
-	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/broker/metrics"
 	"github.com/sirupsen/logrus"
 )
-
-type MessageEvent struct {
-	Timestamp time.Time
-	Count     int
-}
 
 type MessageStorage interface {
 	Add(message Message)
