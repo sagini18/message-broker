@@ -2,13 +2,15 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/consumer/internal/types"
 	"github.com/sirupsen/logrus"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func ReadMessage(tcpConsumer net.Conn, receiver *types.Receiver) {
 	for {

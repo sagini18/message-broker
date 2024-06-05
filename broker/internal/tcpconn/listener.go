@@ -3,11 +3,11 @@ package tcpconn
 import (
 	"bytes"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
@@ -15,6 +15,7 @@ import (
 
 func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, channel channelconsumer.ChannelStorage, sqlite sqlite.Persistence, database *sql.DB) error {
 	defer connection.Close()
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	for {
 		buffer, totalBytesRead, err := readMessages(connection, store, consumer, messageQueue, channel)

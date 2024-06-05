@@ -10,27 +10,13 @@ export default function BasicBarChart({ color, dataset }) {
   const valueFormatter = (value) =>
     value === 0 || value === 1 ? `${value} channel` : `${value} channels`;
 
-  let previousDate = null;
-
-  const timestampFormatter = (timestamp) => {
-    const currentTimestamp = dayjs(timestamp);
-    const currentDate = currentTimestamp.format("YYYY-MM-DD");
-    const formattedTimestamp =
-      currentDate === previousDate
-        ? currentTimestamp.format("HH:mm:ss")
-        : currentTimestamp.format("YYYY-MM-DD HH:mm:ss");
-
-    previousDate = currentDate;
-    return formattedTimestamp;
-  };
-
   const chartSetting = {
     yAxis: [
       {
         label: "no of channels",
       },
     ],
-    series: [{ dataKey: "Count", valueFormatter }],
+    series: [{ dataKey: "count", valueFormatter }],
     height: 300,
     width: 500,
     sx: {
@@ -48,10 +34,9 @@ export default function BasicBarChart({ color, dataset }) {
         xAxis={[
           {
             scaleType: "band",
-            dataKey: "Timestamp",
+            dataKey: "time",
             tickPlacement,
             tickLabelPlacement,
-            valueFormatter: timestampFormatter,
           },
         ]}
         {...chartSetting}

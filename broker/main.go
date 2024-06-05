@@ -9,12 +9,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
-	"github.com/sagini18/message-broker/broker/services/chart"
-	"github.com/sagini18/message-broker/broker/services/table"
+	"github.com/sagini18/message-broker/broker/services"
 	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
@@ -57,28 +57,16 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 
-	app.POST("/api/channels/:id", func(c echo.Context) error {
+	api := app.Group("/api/v1")
+
+	api.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
+	api.POST("/channels/:id", func(c echo.Context) error {
 		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
 	})
 
-	app.GET("/api/channel/all", func(c echo.Context) error {
-		return table.ChannelDetails(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
-	})
-
-	app.GET("/api/consumer/count", func(c echo.Context) error {
-		return chart.Consumer(c, consumerStorage)
-	})
-
-	app.GET("/api/message/count", func(c echo.Context) error {
-		return chart.Messages(c, messageQueue)
-	})
-
-	app.GET("/api/request/count", func(c echo.Context) error {
-		return chart.Request(c, requestCounter)
-	})
-
-	app.GET("/api/channel/count", func(c echo.Context) error {
-		return chart.Channel(c, channel)
+	api.GET("/channels", func(c echo.Context) error {
+		return services.Channels(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
 	})
 
 	if err := app.Start(":8080"); err != nil {
