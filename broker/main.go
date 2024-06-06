@@ -6,6 +6,9 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,8 +17,8 @@ import (
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
 	"github.com/sagini18/message-broker/broker/internal/communication"
 	"github.com/sagini18/message-broker/broker/internal/tcpconn"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/sagini18/message-broker/broker/services"
-	"github.com/sagini18/message-broker/broker/sqlite"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,8 +31,9 @@ func main() {
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.DBPATH = "./sqlite/msgbroker.db"
+		config.DBPATH = "./persistence/msgbroker.db"
 	}
+	runMigrations(config.DBPATH)
 
 	database := initDB(config.DBPATH)
 	defer database.Close()
@@ -41,8 +45,8 @@ func main() {
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCounter := channelconsumer.NewFailMsgCounter()
 	channel := channelconsumer.NewChannel()
-	sqlite := sqlite.New()
-	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, channel, database, sqlite)
+	persist := persistence.New()
+	tcpServer := tcpconn.New(":8081", consumerStorage, messageQueue, consumerIdGenerator, messageIdGenerator, channel, database, persist)
 
 	go func() {
 		if err := tcpServer.Listen(); err != nil {
@@ -62,11 +66,11 @@ func main() {
 	api.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	api.POST("/channels/:id", func(c echo.Context) error {
-		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, sqlite)
+		return communication.Broadcast(c, messageQueue, consumerStorage, messageIdGenerator, requestCounter, failMsgCounter, channel, database, persist)
 	})
 
 	api.GET("/channels", func(c echo.Context) error {
-		return services.Channels(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, sqlite, database)
+		return services.Channels(c, messageQueue, consumerStorage, requestCounter, failMsgCounter, channel, persist, database)
 	})
 
 	if err := app.Start(":8080"); err != nil {
@@ -85,9 +89,19 @@ func initDB(DBPath string) *sql.DB {
 	if err != nil {
 		logrus.Error("Error in opening database: ", err)
 	}
-	_, err = database.Exec("CREATE TABLE IF NOT EXISTS message (id INTEGER PRIMARY KEY, channel_name TEXT NOT NULL, content BLOB)")
-	if err != nil {
-		logrus.Error("Error in creating table: ", err)
-	}
 	return database
+}
+
+func runMigrations(DBPath string) {
+	m, err := migrate.New(
+		"file://migrations",
+		"sqlite3://"+DBPath,
+	)
+	if err != nil {
+		logrus.Fatalf("Error creating migrate instance: %v", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		logrus.Fatalf("Error running migrations: %v", err)
+	}
 }

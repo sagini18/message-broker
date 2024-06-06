@@ -8,7 +8,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/sqlite"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ import (
 *   - error: Returns an error if there is any issue during the process, otherwise returns nil.
  */
 
-func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, database *sql.DB, sqlite sqlite.Persistence) error {
+func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, messageIdGenerator *channelconsumer.SerialMessageIdGenerator, requestCount *channelconsumer.RequestCounter, failMsgCounter *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, database *sql.DB, persist persistence.Persistence) error {
 	channelName := context.Param("id")
 	requestCount.Add(channelName)
 
@@ -42,7 +42,7 @@ func Broadcast(context echo.Context, messageQueue *channelconsumer.InMemoryMessa
 	context.Bind(message)
 
 	go func() {
-		if err := sqlite.Write(*message, database); err != nil {
+		if err := persist.Write(*message, database); err != nil {
 			logrus.Errorf("communication.Broadcast(): persistence.WriteToDB() error: %v", err)
 		}
 	}()

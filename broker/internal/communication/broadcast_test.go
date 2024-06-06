@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/sqlite"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,11 +72,11 @@ func TestBroadcast(t *testing.T) {
 	requestCounter := &channelconsumer.RequestCounter{}
 	failMsgCount := &channelconsumer.FailMsgCounter{}
 	channel := channelconsumer.NewChannel()
-	sqlite := sqlite.New()
+	sqlite := persistence.New()
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.DBPATH = "../../sqlite/msgbroker.db"
+		config.DBPATH = "../../persistence/msgbroker.db"
 	}
 	database, _ := sql.Open("sqlite3", config.DBPATH)
 	defer database.Close()
@@ -113,11 +113,11 @@ func BenchmarkBroadcast(b *testing.B) {
 	requestCounter := channelconsumer.NewRequestCounter()
 	failMsgCount := channelconsumer.NewFailMsgCounter()
 	channel := channelconsumer.NewChannel()
-	sqlite := sqlite.New()
+	sqlite := persistence.New()
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.DBPATH = "../../sqlite/msgbroker.db"
+		config.DBPATH = "../../persistence/msgbroker.db"
 	}
 	database, _ := sql.Open("sqlite3", config.DBPATH)
 	defer database.Close()
