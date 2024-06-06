@@ -8,13 +8,13 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/sqlite"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/sirupsen/logrus"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func Channels(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, sqlite sqlite.Persistence, database *sql.DB) error {
+func Channels(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, channel *channelconsumer.Channel, persist persistence.Persistence, database *sql.DB) error {
 	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
 	c.Response().Header().Set(echo.HeaderCacheControl, "no-cache")
 	c.Response().Header().Set(echo.HeaderConnection, "keep-alive")
@@ -28,7 +28,7 @@ func Channels(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache
 	}
 
 	sendResponse := func() {
-		response := channelSummaryResponse(messageQueue, consumerStorage, requestCounter, failMsgCount, sqlite, database)
+		response := channelSummaryResponse(messageQueue, consumerStorage, requestCounter, failMsgCount, persist, database)
 		data, err := json.Marshal(response)
 		if err != nil {
 			http.Error(c.Response().Writer, err.Error(), http.StatusInternalServerError)
@@ -65,10 +65,10 @@ func Channels(c echo.Context, messageQueue *channelconsumer.InMemoryMessageCache
 
 }
 
-func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, sqlite sqlite.Persistence, database *sql.DB) []map[string]interface{} {
+func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, consumerStorage *channelconsumer.InMemoryConsumerCache, requestCounter *channelconsumer.RequestCounter, failMsgCount *channelconsumer.FailMsgCounter, persist persistence.Persistence, database *sql.DB) []map[string]interface{} {
 	messages := messageQueue.GetAll()
 	consumers := consumerStorage.GetAll()
-	dbmsgs, err := sqlite.ReadAll(database)
+	dbmsgs, err := persist.ReadAll(database)
 	if err != nil {
 		logrus.Error("ChannelDetails(): error reading from persistence db: ", err)
 	}
@@ -102,7 +102,7 @@ func channelSummaryResponse(messageQueue *channelconsumer.InMemoryMessageCache, 
 			"noOfMessagesInQueue":       messageQueue.GetCount(channelName),
 			"noOfConsumers":             len(consumers[channelName]),
 			"noOfRequests":              requestCounter.Get(channelName),
-			"noOfMessagesInPersistence": sqlite.ReadCount(channelName, database),
+			"noOfMessagesInPersistence": persist.ReadCount(channelName, database),
 			"failedMessages":            failMsgCount.Get(channelName),
 		}
 		response = append(response, channelInfo)

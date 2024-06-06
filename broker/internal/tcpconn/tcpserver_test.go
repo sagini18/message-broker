@@ -8,7 +8,7 @@ import (
 
 	"github.com/sagini18/message-broker/broker/config"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/sqlite"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,11 +53,11 @@ func TestHandleNewClientConnection(t *testing.T) {
 	mockConsumerIdGenerator := &channelconsumer.SerialConsumerIdGenerator{}
 	mockMessageIdGenerator := &channelconsumer.SerialMessageIdGenerator{}
 	mockChannel := channelconsumer.NewChannel()
-	sqlite := sqlite.New()
+	sqlite := persistence.New()
 
 	config, err := config.LoadConfig()
 	if err != nil {
-		config.DBPATH = "../../sqlite/msgbroker.db"
+		config.DBPATH = "../../persistence/msgbroker.db"
 	}
 	database, _ := sql.Open("sqlite3", config.DBPATH)
 	defer database.Close()

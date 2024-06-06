@@ -9,11 +9,11 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sagini18/message-broker/broker/internal/channelconsumer"
-	"github.com/sagini18/message-broker/broker/sqlite"
+	"github.com/sagini18/message-broker/broker/persistence"
 	"github.com/sirupsen/logrus"
 )
 
-func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, channel channelconsumer.ChannelStorage, sqlite sqlite.Persistence, database *sql.DB) error {
+func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Consumer, store channelconsumer.Storage, messageQueue channelconsumer.MessageStorage, channel channelconsumer.ChannelStorage, perist persistence.Persistence, database *sql.DB) error {
 	defer connection.Close()
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -51,7 +51,7 @@ func listenToConsumerMessages(connection net.Conn, consumer *channelconsumer.Con
 			logrus.Info("Message received as ack: ", msg)
 
 			go func() {
-				if err := sqlite.Remove(msg.ID, database); err != nil {
+				if err := perist.Remove(msg.ID, database); err != nil {
 					logrus.Errorf("tcpconn.listenToConsumerMessages(): persistence.RemoveFromDB() error: %v", err)
 				}
 			}()
