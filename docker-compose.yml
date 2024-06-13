@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  broker:
+    build:
+      context: ./broker
+    ports:
+      - "8080:8080"  # Exposing REST API port
+      - "8081:8081"  # Exposing TCP port for consumer connection
+    volumes:
+      - ./broker/persistence:/persistence  # Persisting data
+
+  consumer:
+    build:
+      context: ./consumer
+    depends_on:
+      - broker
+    stdin_open: true  # Keep stdin open to enable interaction
+    tty: true  # container remains running and interactive
+    # deploy:
+    #   replicas: 3  

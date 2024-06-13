@@ -151,7 +151,7 @@ const StyledGridOverlay = styled("div")(({ theme }) => ({
 
 function CustomNoRowsOverlay() {
   return (
-    <StyledGridOverlay>
+    <StyledGridOverlay >
       <svg
         style={{ flexShrink: 0 }}
         width="240"

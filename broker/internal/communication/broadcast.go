@@ -2,6 +2,7 @@ package communication
 
 import (
 	"database/sql"
+	"io"
 	"net/http"
 	"strings"
 
@@ -76,7 +77,7 @@ func writeMessage(messageCacheData []channelconsumer.Message, channelName string
 		}
 
 		if _, err := consumer.TcpConn.Write(messageBytes); err != nil {
-			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
+			if err == io.EOF || strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
 					store.Remove(consumer.Id, consumer.SubscribedChannel)
 
