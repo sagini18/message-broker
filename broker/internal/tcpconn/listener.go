@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 
@@ -74,7 +75,7 @@ func readMessages(connection net.Conn, store channelconsumer.Storage, consumer *
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				continue
 			}
-			if strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
+			if err == io.EOF || strings.Contains(err.Error(), "An existing connection was forcibly closed by the remote host.") {
 				if c := store.Get(consumer.Id, consumer.SubscribedChannel); c.TcpConn != nil {
 					store.Remove(consumer.Id, consumer.SubscribedChannel)
 

@@ -16,7 +16,4 @@ COPY --from=builder /build/msgbroker /msgbroker
 COPY --from=builder /build/migrations /migrations
 COPY --from=builder /build/persistence/msgbroker.db /persistence/msgbroker.db
 
-EXPOSE 8080
-EXPOSE 8081
-
 CMD ["/msgbroker"]
