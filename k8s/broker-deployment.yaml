@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broker-deployment
+  namespace: message-broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broker
+  template:
+    metadata:
+      labels:
+        app: broker
+    spec:
+      containers:
+      - name: broker
+        image: message-broker-broker:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        volumeMounts:
+        - mountPath: /persistence
+          name: broker-persistence
+      volumes:
+      - name: broker-persistence
+        persistentVolumeClaim:
+          claimName: broker-pvc

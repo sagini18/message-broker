@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consumer-config
+  namespace: message-broker
+data:
+  CHANNEL_NAME: "channel_2"
