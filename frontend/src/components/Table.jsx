@@ -111,6 +111,7 @@ export default function DataTable({rows}) {
           "& .MuiDataGrid-cell:hover": {
             color: "primary.main",
           },
+          height: rows?.length == 0 && "500px" ,
         }}
       />
     </Box>
@@ -119,7 +120,7 @@ export default function DataTable({rows}) {
 
 function CustomToolbar() {
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer >
       <GridToolbarExport />
     </GridToolbarContainer>
   );
