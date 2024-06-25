@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend-app
-          image: message-broker-frontend:latest
+          image: sagini18/messagebroker-frontend:latest
           ports:
             - containerPort: 3000
           resources: {}

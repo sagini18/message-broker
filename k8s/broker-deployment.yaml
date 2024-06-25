@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: broker
-        image: message-broker-broker:latest
+        image: messagebroker-broker:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8080

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: consumer
-          image: message-broker-consumer:latest
+          image: messagebroker-consumer:latest
           imagePullPolicy: Never
           stdin: true
           tty: true
