@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: broker-ingress
+  namespace: message-broker
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: msg-broker.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: broker-service
+            port:
+              number: 8080
+      - path: /comm
+        pathType: Prefix
+        backend:
+          service:
+            name: broker-service
+            port:
+              number: 8081
