@@ -6,73 +6,55 @@ export const useMetrics = () => {
   const [requestsEvents, setRequestsEvents] = useState([]);
   const [consumersEvents, setConsumersEvents] = useState([]);
   const [messagesEvents, setMessagesEvents] = useState([]);
-
+  
   useEffect(() => {
     const fetchData = async () => {
+      const metricsToFetch = [
+        'messages_events',
+        'consumers_events',
+        'requests_events',
+        'channels_events',
+    ];
       try {
-        const response = await axios.get(
-          "http://localhost:8080/api/v1/metrics"
-        );
-        if (response.data) {
-          const channelsMatch = response.data.match(/channels_events\s+(\d+)/);
-          const requestsMatch = response.data.match(/requests_events\s+(\d+)/);
-          const consumersMatch = response.data.match(
-            /consumers_events\s+(\d+)/
+        let response
+        metricsToFetch.map(async(metric)=>{
+          response = await axios.get(
+            `http://localhost:9090/api/v1/query?query=${metric}`
           );
-          const messagesMatch = response.data.match(/messages_events\s+(\d+)/);
-          const channels = channelsMatch ? Number(channelsMatch[1]) : null;
-          const requests = requestsMatch ? Number(requestsMatch[1]) : null;
-          const consumers = consumersMatch ? Number(consumersMatch[1]) : null;
-          const messages = messagesMatch ? Number(messagesMatch[1]) : null;
-
-          if (channels !== null) {
-            setChannelsEvents((prevData) => [
-              ...prevData,
-              {
-                time: new Date().toLocaleTimeString(),
-                count: channels,
-              },
-            ]);
-          }
-
-          if (requests !== null) {
-            setRequestsEvents((prevData) => [
-              ...prevData,
-              {
-                time: new Date().toLocaleTimeString(),
-                count: requests,
-              },
-            ]);
-          }
-
-          if (consumers !== null) {
-            setConsumersEvents((prevData) => [
-              ...prevData,
-              {
-                time: new Date().toLocaleTimeString(),
-                count: consumers,
-              },
-            ]);
-          }
-
-          if (messages !== null) {
-            setMessagesEvents((prevData) => [
-              ...prevData,
-              {
-                time: new Date().toLocaleTimeString(),
-                count: messages,
-              },
-            ]);
-          }
+          
+          const result = response.data?.data?.result?.[0];
+          if (result.metric.__name__ === metric) {
+            const newData = {
+              time: new Date().toLocaleTimeString(),
+              count: result.value[1],
+            };
+  
+            switch (metric) {
+              case 'channels_events':
+                setChannelsEvents((prevData) => [...prevData, newData]);
+                break;
+              case 'requests_events':
+                setRequestsEvents((prevData) => [...prevData, newData]);
+                break;
+              case 'consumers_events':
+                setConsumersEvents((prevData) => [...prevData, newData]);
+                break;
+              case 'messages_events':
+                setMessagesEvents((prevData) => [...prevData, newData]);
+                break;
+              default:
+                break;
+            }
         }
+      })
       } catch (error) {
         console.error("Error fetching metrics:", error);
       }
     };
 
-    const intervalId = setInterval(fetchData, 5000);
-
-    return () => clearInterval(intervalId);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, [channelsEvents, requestsEvents, consumersEvents, messagesEvents]);
 
   return { channelsEvents, requestsEvents, consumersEvents, messagesEvents };

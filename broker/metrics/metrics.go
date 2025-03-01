@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	// dto "github.com/prometheus/client_model/go"
 )
 
 var (
@@ -27,15 +26,3 @@ var (
 func init() {
 	prometheus.MustRegister(ChannelsEvents, RequestsEvents, ConsumerEvents, MessageEvents)
 }
-
-// func GetChannelsEvents() int {
-// 	var m dto.Metric
-// 	ChannelsEvents.Write(&m)
-// 	return int(m.GetGauge().GetValue())
-// }
-
-// func GetRequestsEvents() int {
-// 	var m dto.Metric
-// 	RequestsEvents.Write(&m)
-// 	return int(m.GetCounter().GetValue())
-// }
