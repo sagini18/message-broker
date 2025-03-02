@@ -7,7 +7,7 @@ import (
 )
 
 func InitConnection(tcpConn *types.TcpConn) error {
-	conn, err := net.Dial("tcp", "localhost:8081")
+	conn, err := net.Dial("tcp", "broker-service:8081")
 	if err != nil {
 		return err
 	}
